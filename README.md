@@ -1,2 +1,2 @@
 # coffee-salad
-Test-bed for cross platform testing
+Pythonic excel calendar generator
