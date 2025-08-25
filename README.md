@@ -12,6 +12,7 @@ A Python application to create a calendar in Microsoft Excel.
   - The actual events entered, including start/end dates and type.
   - The styles used in the calendar.
 
+
 ## Calendar_template
 
 columns and rows
@@ -86,31 +87,32 @@ flowchart LR
     L --> M[styled cells]:::purple
     L --> N[bordered cells]:::purple
 
-    classDef orange fill:#f9d29d,stroke:#d4a373,stroke-width:1px;
-    classDef grey fill:#e5e5e5,stroke:#999,stroke-width:1px;
-    classDef green fill:#b6e3b6,stroke:#4c9141,stroke-width:1px;
-    classDef purple fill:#d5b8e5,stroke:#7a4c91,stroke-width:1px;
-    classDef blue fill:#c9daf8,stroke:#3c78d8,stroke-width:1px;
+    classDef orange fill:#2d1a00,stroke:#a05a00,stroke-width:1px,color:#fff;
+    classDef grey fill:#222,stroke:#444,stroke-width:1px,color:#fff;
+    classDef green fill:#1a3d1a,stroke:#2e7d32,stroke-width:1px,color:#fff;
+    classDef purple fill:#2d1a33,stroke:#6a1b9a,stroke-width:1px,color:#fff;
+    classDef blue fill:#102040,stroke:#1565c0,stroke-width:1px,color:#fff;
 
+```
 
+## outputted Calendar
 
-
-## Calendar
-
-The output calendar is saved as a sheet in an xlsx file.
-
+The generated calendar is output as a worksheet within an `.xlsx` file.
 
 ## Classes
 
-Includes the following classes:
+The application includes these main classes:
 
-- `main`
-- `calendar_creator`
+- `main`  
+  Entry point for running the application.
+- `calendar_creator`  
+  Handles the creation and population of the calendar.
 - `config_xlsx_reader`  
-  Reads the structure, content, and styles of a calendar from an `.xlsx` (config) file.
+  Reads calendar structure, content, and styles from a configuration `.xlsx` file.
 - `config_xlsx_writer`  
-  Saves the structure, content, and styles of a calendar to an `.xlsx` (config) file.
+  Writes calendar structure, content, and styles to a configuration `.xlsx` file.
 - `calendar_util`  
-  Holds logging, script config loading, and other utility functions.
+  Provides logging, script configuration loading, and utility functions.
+
 
 
