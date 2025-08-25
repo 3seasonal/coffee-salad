@@ -65,6 +65,7 @@ Worksheets are used to store individual configurations
 
 
 ## Calendar_template structure:
+
 ```mermaid
 flowchart LR
     A[configuration index<br/>and metadata]:::orange --> B[calendar]:::grey
