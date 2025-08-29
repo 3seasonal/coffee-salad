@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+
+"""Calendar xlsx yaml config
+    Coffee-Salad calendar package
+
+    This yaml provides the high level config 
+        
+    Author:         dillonj
+    Created:        2025-08-29
+    Description:    funtional configuration
+    
+"""
+
+config_source_name: calendar_template.xlsx
+
+
