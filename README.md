@@ -17,8 +17,9 @@ A Python application to create a calendar in Microsoft Excel.
 **Parsing the calendar**
 
 columns and rows
+
 - First row contains the column headers
-- any empty rows are ignored, for readability only 
+- any empty rows are ignored, for readability only
 - any rows starting with # in the first populated column can be considered empty and ignored
 - columns that don't have a header are ignored
 
@@ -27,8 +28,9 @@ columns and rows
 Columns in the configuration are specific
 
 type column
+
 - each parameter is assigned a type, these are used to contextualise values and define the configuration structure
-- types are defined in the meta-config 
+- types are defined in the meta-config
 - meta-config type params provide the metadata for the proceeding configuration in the sheet
 - config type params provide a link to the next sub-configuration worksheet
 - meta types point to non-parse-able metadata sheets and should not be read
@@ -38,32 +40,48 @@ type column
 - style-border uses the styles the value column borders for parsing the border style and sides
 
 param column
+
 - param column defines the parameters name
 - when the value type is a list, the meta-config value will be used as the matrix/list/dictionary name
 
 value column
+
 - in the meta-config the value column defines which columns to use as values
 - single value parameters usually say 'value' in the sheets meta-config row, else a list of columns to consider the as a list (row) value
 - trailing commers can be ignored
 
 other columns
+
 - unless specified in the value column, all other columns are meta and can be ignored
 - meta columns (usually but not always) include description, notes, ref
 
 **worksheets**
 
 Worksheets are used to store individual configurations
+
 - worksheet names must start with "config-"
-- the "config-meta" sheet defines lists that may be used later. it does not 
+- the "config-meta" sheet defines lists that may be used later. it does not
 - first non-meta worksheet is the starting index or "main config" sheet, usually called config-main
 - from the main config, the configuration is mapped out in a tree structure linking to the other worksheets
 - the "config-style" sheet defines the styles, both cell and cell borders. Use spaces between rows where practical  
 
 meta-config
+
 - the meta-config is usually the first row of values after the headers
 - this row describes how to parse the proceeding information
 
-## Calendar_template structure:
+config-styles
+
+- the syles are stored as excel formatted styles, rather than textual descriptions
+- styled cells are read in via the openpyxl: https://openpyxl.readthedocs.io/en/stable/styles.html
+
+
+## Calendar_template structure
+
+- calendar
+- columns
+- events
+- styles
 
 ```mermaid
 flowchart LR
@@ -96,7 +114,6 @@ flowchart LR
 ## outputted Calendar
 
 The generated calendar is output as a worksheet within an `.xlsx` file.
-
 
 ## Classes
 
