@@ -2,6 +2,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter, column_index_from_string
 import datetime
 from typing import Dict, List, Any, Tuple, Optional, Union
+import os
 
 class ConfigXlsxReader:
     """
@@ -17,6 +18,7 @@ class ConfigXlsxReader:
         """Initialize the reader with the path to the Excel file."""
         self.xlsx_path = xlsx_path
         self.workbook = None
+        self.worksheet = None
         
         # Output dictionaries
         self.calendar = {}
@@ -24,46 +26,188 @@ class ConfigXlsxReader:
         self.events = {}
         self.styles = {}
         
-        # For tracking meta configurations
-        self.meta_config = {}
+        # worksheet meta-config
+        self.col_value_names = []
+        self.col_index = {}
+        
+        # check if the xlsx file exists
+        if not self.xlsx_path:
+            raise ValueError("Excel file was not provided.")
+        if not os.path.isfile(self.xlsx_path):
+            raise FileNotFoundError(f"Excel file '{self.xlsx_path}' does not exist.")
+        
+        # check if it contains a valid config-main sheet
+        self.workbook = openpyxl.load_workbook(self.xlsx_path, data_only=True)
+        if "config-main" not in self.workbook.sheetnames:
+            self.workbook.close()
+            raise ValueError("No main config sheet found.")
+        
+        else:
+            # report the number of sheets loaded
+            print(f"loaded workbook '{self.xlsx_path}' with {str(len(self.workbook.sheetnames))} sheets")
+         
     
     def read_config(self) -> Tuple[Dict, Dict, Dict, Dict]:
         """
         Reads the configuration from the Excel file and returns the four dictionaries.
-        
+        Follows the configuration tree, starting from config-meta, then config-main, and only parses referenced config sheets (ignoring config-meta as a config).
         Returns:
             Tuple containing (calendar, columns, events, styles) dictionaries
+        """       
+        # parse the config-main sheet and follow the configuration tree
+        parsed_config = self._parse_worksheet_(self, "config-main")
+        
+        return parsed_config.calendar, parsed_config.columns, parsed_config.events, parsed_config.styles
+
+
+
+    def _parse_worksheet_(self, worksheet_name) -> Dict:
+        """_summary_
+        This function parses a single worksheet from the configuriation and returns 
+        a dictionary representation of its contents.
+        Function is recursive and will follow config references to other sheets.
+        will check the first two rows for meta-config and header row.
+        This will be used to configure how the rest of the sheet is parsed.
+        Args:
+            worksheet_name (string): the name of the worksheet to parse
+        Returns:
+            Dict: a dictionary representation of the worksheet contents
+        THrows:
+            ValueError: if the worksheet does not exist
         """
-        # Open the workbook
-        self.workbook = openpyxl.load_workbook(self.xlsx_path, data_only=True)
+
         
-        # Find all config worksheets and process them
-        config_sheets = [sheet for sheet in self.workbook.sheetnames if sheet.startswith("config-")]
+        # get the worksheet and meta-config
+        worksheet, col_index, col_value_names = self._load_worksheet_metaconfig_(worksheet_name)
         
-        # Process meta sheet first if it exists
-        if "config-meta" in config_sheets:
-            self._process_meta_sheet("config-meta")
-            config_sheets.remove("config-meta")
+        # iniatialize output dictionary
+        output_dict = {}
         
-        # Find main config sheet (first non-meta sheet)
-        main_config = next(iter(config_sheets), None)
-        if main_config:
-            self._process_main_config(main_config)
-            config_sheets.remove(main_config)
+        # Build a dictionary mapping column names to their indices
+        col_names = {
+            'param': col_index.get('param'),
+            'type': col_index.get('type')
+        }
+        for value_name in col_value_names:
+            col_names[value_name] = col_index.get(value_name)
+                
+        # Parse the content in the sheet based on the meta-config
+        for row in worksheet.iter_rows(min_row=3):
+            
+            #if the param cell is empty or commented out, skip the row
+            if (row[col_names['param'] - 1].value is not None) and (row[col_names['param'] - 1].value.strip() != "") and not (row[col_names['param'] - 1].value.strip().startswith("#")):
+                
+                param = row[col_names['param'] - 1].value.strip().lower()
+                param_type = row[col_names['type'] - 1].value.strip().lower() if row[col_names['type'] - 1].value else "string"
+                
+                # Handle different prinitive types
+                if param_type == "string":
+                    output_dict[param] = row[col_names['value'] - 1].value.strip()
+                elif param_type == "bool":
+                    output_dict[param] = True if row[col_names['value'] - 1].value.strip().lower() in ["true", "yes", "1"] else False
+                elif param_type == "int":
+                    try:
+                        output_dict[param] = int(row[col_names['value'] - 1].value.strip())
+                    except (ValueError, TypeError):
+                        raise ValueError(f"Invalid integer value for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
+                elif param_type == "float":
+                    try:
+                        output_dict[param] = float(row[col_names['value'] - 1].value.strip())
+                    except (ValueError, TypeError):
+                        raise ValueError(f"Invalid float value for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
+                    output_dict[param] = float(row[col_names['value'] - 1].value.strip())
+                elif param_type == "date":
+                    output_dict[param] = self._parse_date(row[col_names['value'] - 1].value.strip())
+                    
+                # Handle different complex types  
+                elif param_type == "list":
+                    sub_dict = {}
+                    
+                    
+                    # unpack the actual name and type form the col_value_names
+                    # col_value_names.remove('value') #keep the value column as it is will act as an alias
+                    for vc in col_value_names:
+                        if "_" in vc:
+                            vc_type = vc.split("_")[-1]
+                            vc = vc[:-len(vc_type)]
+                        else:
+                            vc_type = "string"
+                        
+                        #...
+                        # handle conversion of each value to its type
+                        #... and set to dict
+                        sub_dict[vc] = row[col_names[vc] - 1].value.strip() if row[col_names[vc] - 1].value else ""
+                        
+                    # add sub-dict to output dict
+                    output_dict[param] = sub_dict
+                        
+                        
+                
+                ## Handle config reference recursion
+                elif param_type == "config":
+                    # Recursively parse the referenced config sheet
+                    ref_sheet_name = row[col_names['value'] - 1].value.strip()
+                    if ref_sheet_name and ref_sheet_name.strip() != "":
+                        output_dict[param] = self._parse_worksheet_(ref_sheet_name.strip())
+                    else:
+                        raise ValueError(f"Empty config reference for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
+                else:
+                    raise ValueError(f"Unknown type '{param_type}' for parameter '{param}' in sheet '{worksheet_name}'")
+            
+        # finished - turn in home work
+        return output_dict
+            
+            
+'''
+NOTE TO SELF:
+need to update the config to include _{typw} type for all value columns that are in lists
+eg start_date 
+
+
+'''
+    
+
+
+    def _get_worksheet_(self, sheet_name: str) -> openpyxl.worksheet:
         
-        # Process styles if exists
-        if "config-style" in config_sheets:
-            self._process_style_sheet("config-style")
-            config_sheets.remove("config-style")
         
-        # Process remaining sheets based on references from the main config
-        for sheet_name in config_sheets:
-            self._process_config_sheet(sheet_name)
+        """Check if a worksheet exists in the workbook."""
+        if sheet_name is None or sheet_name.strip() == "":
+            raise ValueError("Sheet name must be a non-empty string.")
+        if sheet_name not in self.workbook.sheetnames:
+            raise ValueError(f"Worksheet '{sheet_name}' does not exist in the workbook containing: ({', '.join(self.workbook.sheetnames)})")
         
-        # Close workbook
-        self.workbook.close()
+        return self.workbook[sheet_name]   
+
+
+
+      
+    def _get_worksheet_metaconfig_(self, sheet_name) -> Tuple[openpyxl.worksheet, dict, list]:
         
-        return self.calendar, self.columns, self.events, self.styles
+        # reset col_value_names
+        col_value_names = []
+        col_index = {}
+        worksheet = self._get_worksheet_(sheet_name)
+                
+        # read first row to get column names
+        first_row = [cell.value for cell in worksheet[1]]
+        
+        if ("param" not in first_row) or ("type" not in first_row) or ("value" not in first_row):
+            raise ValueError(f"Missing required columns in header: {first_row}")
+        
+        # convert list to dict of column name to 1 based index
+        col_index = {col_name: idx + 1 for idx, col_name in enumerate(first_row)} 
+        # get value columns
+        col_value_names = self.worksheet.cell(row=2, column=col_index["value"]).value.split(",")
+        
+        return worksheet, col_index, col_value_names
+        
+        
+        
+        
+        
+        
+        
     
     def _process_meta_sheet(self, sheet_name: str) -> None:
         """Process the meta configuration sheet."""
@@ -96,209 +240,9 @@ class ConfigXlsxReader:
             # Other meta config as needed
         }
     
-    def _process_main_config(self, sheet_name: str) -> None:
-        """Process the main configuration sheet and build the initial configuration."""
-        sheet = self.workbook[sheet_name]
-        config_data = self._parse_config_sheet(sheet)
-        
-        # Organize data into the appropriate dictionaries based on the config structure
-        for item in config_data:
-            if item.get("type") == "calendar":
-                self.calendar = self._process_calendar_config(item)
-            elif item.get("type") == "columns":
-                self.columns["config"] = item
-                if "sheet" in item:
-                    self._process_columns_sheet(item["sheet"])
-            elif item.get("type") == "events":
-                self.events["config"] = item
-                if "sheet" in item:
-                    self._process_events_sheet(item["sheet"])
-            elif item.get("type") == "styles":
-                self.styles["config"] = item
-                # Styles are usually processed separately through _process_style_sheet
     
-    def _process_calendar_config(self, config: Dict) -> Dict:
-        """Process calendar-specific configuration."""
-        # Extract and transform calendar configuration
-        calendar_config = {}
-        
-        # Process based on config structure from README
-        if "start_date" in config:
-            calendar_config["start_date"] = config["start_date"]
-        if "end_date" in config:
-            calendar_config["end_date"] = config["end_date"]
-        # Add other calendar-specific properties
-        
-        return calendar_config
     
-    def _process_columns_sheet(self, sheet_name: str) -> None:
-        """Process the columns configuration sheet."""
-        if sheet_name not in self.workbook.sheetnames:
-            return
-            
-        sheet = self.workbook[sheet_name]
-        column_data = self._parse_config_sheet(sheet)
-        
-        # Process column class list with metadata
-        column_classes = []
-        for item in column_data:
-            if item.get("type") == "column-class":
-                column_classes.append(item)
-            # Process other column-related configurations
-        
-        self.columns["classes"] = column_classes
-        
-        # Process any sub-configurations for columns if needed
-        for col_class in column_classes:
-            if "sheet" in col_class:
-                sub_sheet_name = col_class["sheet"]
-                if sub_sheet_name in self.workbook.sheetnames:
-                    # Process sub-configuration
-                    sub_data = self._parse_config_sheet(self.workbook[sub_sheet_name])
-                    col_class["sub_config"] = sub_data
     
-    def _process_events_sheet(self, sheet_name: str) -> None:
-        """Process the events configuration sheet."""
-        if sheet_name not in self.workbook.sheetnames:
-            return
-            
-        sheet = self.workbook[sheet_name]
-        event_data = self._parse_config_sheet(sheet)
-        
-        # Process event class list with metadata
-        event_classes = []
-        event_entries = []
-        
-        for item in event_data:
-            if item.get("type") == "event-class":
-                event_classes.append(item)
-            elif item.get("type") == "event":
-                event_entries.append(item)
-            # Process other event-related configurations
-        
-        self.events["classes"] = event_classes
-        self.events["entries"] = event_entries
-    
-    def _process_style_sheet(self, sheet_name: str) -> None:
-        """Process the styles configuration sheet."""
-        if sheet_name not in self.workbook.sheetnames:
-            return
-            
-        sheet = self.workbook[sheet_name]
-        style_data = self._parse_config_sheet(sheet)
-        
-        cell_styles = {}
-        border_styles = {}
-        
-        for item in style_data:
-            if item.get("type") == "style-cell":
-                # Extract cell style properties
-                style_name = item.get("param")
-                if style_name:
-                    cell = self._get_cell_by_value(sheet, item.get("value"))
-                    if cell:
-                        cell_styles[style_name] = self._extract_cell_style(cell)
-            elif item.get("type") == "style-border":
-                # Extract border style properties
-                style_name = item.get("param")
-                if style_name:
-                    cell = self._get_cell_by_value(sheet, item.get("value"))
-                    if cell:
-                        border_styles[style_name] = self._extract_border_style(cell)
-        
-        self.styles["cell_styles"] = cell_styles
-        self.styles["border_styles"] = border_styles
-    
-    def _process_config_sheet(self, sheet_name: str) -> None:
-        """Process any other configuration sheet based on its content."""
-        # This would be implemented based on the specific needs of other config sheets
-        pass
-    
-    def _parse_config_sheet(self, sheet) -> List[Dict]:
-        """
-        Parse a configuration sheet and return a list of configuration items.
-        
-        Args:
-            sheet: The worksheet to parse
-            
-        Returns:
-            List of dictionaries with configuration items
-        """
-        result = []
-        header_row = self._find_header_row(sheet)
-        
-        if not header_row:
-            return result
-            
-        headers = self._get_row_values(sheet, header_row)
-        
-        # Find important column indices
-        type_idx = headers.index('type') if 'type' in headers else self.meta_config.get("type_col")
-        param_idx = headers.index('param') if 'param' in headers else self.meta_config.get("param_col")
-        value_idx = headers.index('value') if 'value' in headers else self.meta_config.get("value_col")
-        
-        if not all([type_idx is not None, param_idx is not None, value_idx is not None]):
-            return result
-        
-        # Process meta-config row if exists
-        meta_row_idx = header_row + 1
-        meta_row = self._get_row_values(sheet, meta_row_idx)
-        
-        if len(meta_row) > max(type_idx, param_idx, value_idx):
-            meta_config = {
-                "value_columns": self._parse_value_columns(meta_row[value_idx]) if value_idx < len(meta_row) else None
-            }
-        else:
-            meta_config = {}
-            
-        # Process data rows
-        for row_idx in range(header_row + 2, sheet.max_row + 1):
-            row_values = self._get_row_values(sheet, row_idx)
-            
-            # Skip empty rows or comment rows
-            if not row_values or (row_values and row_values[0].startswith('#')):
-                continue
-                
-            if len(row_values) <= max(type_idx, param_idx, value_idx):
-                continue
-                
-            item_type = row_values[type_idx] if type_idx < len(row_values) else None
-            param_name = row_values[param_idx] if param_idx < len(row_values) else None
-            
-            # Skip if no type or param
-            if not item_type or not param_name:
-                continue
-                
-            # Create config item
-            config_item = {
-                "type": item_type,
-                "param": param_name
-            }
-            
-            # Process value based on type
-            if item_type == "int":
-                config_item[param_name] = int(row_values[value_idx]) if value_idx < len(row_values) else None
-            elif item_type == "string":
-                config_item[param_name] = row_values[value_idx] if value_idx < len(row_values) else ""
-            elif item_type == "date":
-                config_item[param_name] = self._parse_date(row_values[value_idx]) if value_idx < len(row_values) else None
-            elif item_type == "list":
-                # Process list values based on meta_config
-                if meta_config.get("value_columns"):
-                    list_values = []
-                    for col_idx in meta_config["value_columns"]:
-                        if col_idx < len(row_values):
-                            list_values.append(row_values[col_idx])
-                    config_item[param_name] = list_values
-            elif item_type == "config":
-                # Link to another sheet
-                config_item["sheet"] = row_values[value_idx] if value_idx < len(row_values) else None
-            elif item_type in ["style-cell", "style-border"]:
-                config_item["value"] = row_values[value_idx] if value_idx < len(row_values) else None
-                
-            result.append(config_item)
-            
-        return result
     
     def _find_header_row(self, sheet) -> Optional[int]:
         """Find the header row in the sheet."""
@@ -377,6 +321,8 @@ class ConfigXlsxReader:
                     return cell
         return None
     
+    ########################################
+    
     def _extract_cell_style(self, cell) -> Dict:
         """Extract style properties from a cell."""
         style = {}
@@ -409,6 +355,8 @@ class ConfigXlsxReader:
             }
         
         return style
+    
+    
     
     def _extract_border_style(self, cell) -> Dict:
         """Extract border style properties from a cell."""
