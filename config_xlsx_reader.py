@@ -99,50 +99,77 @@ class ConfigXlsxReader:
                 
                 param = row[col_names['param'] - 1].value.strip().lower()
                 param_type = row[col_names['type'] - 1].value.strip().lower() if row[col_names['type'] - 1].value else "string"
+                value = row[col_names['value'] - 1].value.strip()
                 
                 # Handle different prinitive types
-                if param_type == "string":
-                    output_dict[param] = row[col_names['value'] - 1].value.strip()
+                if param_type.startswith("style-cell"):
+                    output_dict[param] = self._extract_cell_style(row[col_names['value'] - 1])
+                    
+                elif param_type.startswith("style-border"):
+                    output_dict[param] = self._extract_cell_border_style(row[col_names['value'] - 1])   
+                    
+                elif param_type == "string":
+                    output_dict[param] = value
+                    
                 elif param_type == "bool":
-                    output_dict[param] = True if row[col_names['value'] - 1].value.strip().lower() in ["true", "yes", "1"] else False
+                    output_dict[param] = True if value.lower() in ["true", "yes", "1"] else False
+                    
                 elif param_type == "int":
                     try:
-                        output_dict[param] = int(row[col_names['value'] - 1].value.strip())
+                        output_dict[param] = int(value)
                     except (ValueError, TypeError):
                         raise ValueError(f"Invalid integer value for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
+                
                 elif param_type == "float":
                     try:
-                        output_dict[param] = float(row[col_names['value'] - 1].value.strip())
+                        output_dict[param] = float(value)
                     except (ValueError, TypeError):
                         raise ValueError(f"Invalid float value for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
-                    output_dict[param] = float(row[col_names['value'] - 1].value.strip())
+                    output_dict[param] = float(value)
+                
                 elif param_type == "date":
-                    output_dict[param] = self._parse_date(row[col_names['value'] - 1].value.strip())
+                    output_dict[param] = self._parse_date(value)
                     
                 # Handle different complex types  
                 elif param_type == "list":
                     sub_dict = {}
                     
-                    
                     # unpack the actual name and type form the col_value_names
                     # col_value_names.remove('value') #keep the value column as it is will act as an alias
                     for vc in col_value_names:
+                        vc_type = "string" #set default type
+                        val = row[col_names['value'] - 1].value.strip()
+                        
+                        # get the type if specified
                         if "_" in vc:
                             vc_type = vc.split("_")[-1]
                             vc = vc[:-len(vc_type)]
-                        else:
-                            vc_type = "string"
                         
-                        #...
-                        # handle conversion of each value to its type
-                        #... and set to dict
-                        sub_dict[vc] = row[col_names[vc] - 1].value.strip() if row[col_names[vc] - 1].value else ""
+                        if vc_type == "date":
+                            sub_dict[vc] = self._parse_date(val)    
+                        
+                        elif vc_type == "int":
+                            try:
+                                sub_dict[vc] = int(val) 
+                            except (ValueError, TypeError):
+                                raise ValueError(f"Invalid integer value for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
+                        
+                        elif vc_type == "float":
+                            try:
+                                sub_dict[vc] = float(val) 
+                            except (ValueError, TypeError):
+                                raise ValueError(f"Invalid float value for parameter '{param}' in sheet '{worksheet_name}' Row {row[0].row}")
+                                          
+                        elif vc_type == "bool":
+                           sub_dict[vc] = True if val.lower() in ["true", "yes", "1"] else False
+                            
+                        else: #vctype is a string
+                            sub_dict[vc] = val if val else ""
                         
                     # add sub-dict to output dict
                     output_dict[param] = sub_dict
                         
                         
-                
                 ## Handle config reference recursion
                 elif param_type == "config":
                     # Recursively parse the referenced config sheet
@@ -157,14 +184,88 @@ class ConfigXlsxReader:
         # finished - turn in home work
         return output_dict
             
+    def _extract_cell_style(self, cell) -> Dict:
+        """Extract style properties from a cell."""
+        style = {}
+        
+        # Font properties
+        if cell.font:
+            style["font"] = {
+                "name": cell.font.name,
+                "size": cell.font.size,
+                "bold": cell.font.bold,
+                "italic": cell.font.italic,
+                "color": cell.font.color.rgb if cell.font.color else None
+            }
+        
+        # Fill properties
+        if cell.fill:
+            style["fill"] = {
+                "type": cell.fill.fill_type,
+                "start_color": cell.fill.start_color.rgb if cell.fill.start_color else None,
+                "end_color": cell.fill.end_color.rgb if cell.fill.end_color else None
+            }
+        
+        # Alignment properties
+        if cell.alignment:
+            style["alignment"] = {
+                "horizontal": cell.alignment.horizontal,
+                "vertical": cell.alignment.vertical,
+                "wrap_text": cell.alignment.wrap_text,
+                "text_rotation": cell.alignment.text_rotation
+            }
+        
+        return style
+        
+        
+        
+    def _extract_cell_border_style(self, cell) -> Dict:
+        """Extract border style properties from a cell."""
+        border_style = {}
+        
+        if not cell.border:
+            return border_style
             
-'''
-NOTE TO SELF:
-need to update the config to include _{typw} type for all value columns that are in lists
-eg start_date 
-
-
-'''
+        # Process each side of the border
+        for side in ["top", "right", "bottom", "left"]:
+            border_side = getattr(cell.border, side)
+            if border_side:
+                border_style[side] = {
+                    "style": border_side.style,
+                    "color": border_side.color.rgb if border_side.color else None
+                }
+                
+        return border_style
+        
+        
+        
+            
+    def _parse_date(self, date_str: str) -> Optional[datetime.date]:
+        """Parse a date string into a date object."""
+        if not date_str:
+            return None
+            
+        # First check if it's already a datetime
+        if isinstance(date_str, datetime.datetime):
+            return date_str.date()
+            
+        # Try various date formats
+        date_formats = [
+            "%Y-%m-%d",
+            "%d/%m/%Y",
+            "%m/%d/%Y",
+            "%d-%m-%Y",
+            "%d %b %Y",
+            "%d %B %Y"
+        ]
+        
+        for fmt in date_formats:
+            try:
+                return datetime.datetime.strptime(date_str, fmt).date()
+            except ValueError:
+                continue
+                
+        return None
     
 
 
