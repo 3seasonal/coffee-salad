@@ -86,7 +86,7 @@ class ConfigXlsxReader:
             logger.debug(f"Workbook sheets: {self.workbook.sheetnames}")
          
     
-    def read_config(self) -> Tuple[Dict, Dict, Dict, Dict]:
+    def read_config(self):
         """
         Reads the configuration from the Excel file and returns the four dictionaries.
         Follows the configuration tree, starting from config-meta, then config-main, and only parses referenced config sheets (ignoring config-meta as a config).
@@ -94,13 +94,13 @@ class ConfigXlsxReader:
             Tuple containing (calendar, columns, events, styles) dictionaries
         """       
         # parse the config-main sheet and follow the configuration tree
-        parsed_config = self._parse_worksheet_(self, "config-main")
+        parsed_config = self._parse_worksheet_("config-main")
         
         return parsed_config.calendar, parsed_config.columns, parsed_config.events, parsed_config.styles
 
 
 
-    def _parse_worksheet_(self, worksheet_name) -> Dict:
+    def _parse_worksheet_(self, worksheet_name):
         """_summary_
         This function parses a single worksheet from the configuriation and returns 
         a dictionary representation of its contents.
@@ -117,15 +117,15 @@ class ConfigXlsxReader:
 
         
         # get the worksheet and meta-config
-        worksheet, col_index, col_value_names = self._load_worksheet_metaconfig_(worksheet_name)
+        worksheet, col_index, col_value_names = self._get_worksheet_metaconfig_(worksheet_name)
         
         # iniatialize output dictionary
         output_dict = {}
         
 
         # Build a dictionary mapping column names to their indices
-        col_names = {name.strip().lower(): col_index.get(name) for name in ['param', 'type'] + col_value_names}
-                
+        col_names = {name.strip().lower(): col_index.get(name) for name in (['param', 'type'] + col_value_names)}
+
 
         # Parse the content in the sheet based on the meta-config
         for row in worksheet.iter_rows(min_row=3):
@@ -133,7 +133,7 @@ class ConfigXlsxReader:
             if (row[col_names['param'] - 1].value is not None) and (row[col_names['param'] - 1].value.strip() != "") and not (row[col_names['param'] - 1].value.strip().startswith("#")):
                 param = row[col_names['param'] - 1].value.strip().lower()
                 param_type = row[col_names['type'] - 1].value.strip().lower() if row[col_names['type'] - 1].value else "string"
-                value = row[col_names['value'] - 1].value.strip()
+                value = row[col_names['value'] - 1].value
 
 
                 # Handle different prinitive types for the row value
@@ -147,7 +147,7 @@ class ConfigXlsxReader:
                     output_dict[param] = value
 
                 elif param_type == "bool":
-                    output_dict[param] = True if value.lower() in ["true", "yes", "1"] else False
+                    output_dict[param] = True if value in ["true","True","TRUE","yes","Yes","YES","1"] else False
 
                 elif param_type == "int":
                     try:
@@ -169,15 +169,8 @@ class ConfigXlsxReader:
                 # Handle different complex types
                 elif param_type == "list":
 
-                    # unpack the value list once
-                    value_list = [v.strip() for v in value.split(",")] if value else []
-                    # remove the value column from the sub values dictionary
-                    col_names = dict(value_list)
-                    col_names.pop('value')
-
                     # create a sub-dictionary for the list
                     sub_dict = {}
-
 
                     for subcol in col_names:
                         subcol_value = row[col_names[subcol] - 1].value.strip() if row[col_names[subcol] - 1].value else ""
@@ -231,7 +224,7 @@ class ConfigXlsxReader:
         
         
             
-    def _parse_date_(self, date_str: str) -> Optional[datetime.date]:
+    def _parse_date_(self, date_str: str):
         """Parse a date string into a date object."""
         if not date_str:
             return None
@@ -260,7 +253,7 @@ class ConfigXlsxReader:
     
 
 
-    def _get_worksheet_(self, sheet_name: str) -> openpyxl.worksheet:
+    def _get_worksheet_(self, sheet_name: str):
         
         sheet_name = sheet_name.strip()
         
@@ -274,8 +267,8 @@ class ConfigXlsxReader:
         
         if sheet_name not in self.workbook.sheetnames:
             raise ValueError(f"Worksheet '{sheet_name}' does not exist in the workbook containing: ({', '.join(self.workbook.sheetnames)})")
-        
-        # cahce the worksheet
+
+        # cache the worksheet
         self.worksheet[sheet_name] = self.workbook[sheet_name]
 
         return self.worksheet[sheet_name] 
@@ -283,16 +276,16 @@ class ConfigXlsxReader:
 
 
 
-      
-    def _get_worksheet_metaconfig_(self, sheet_name) -> Tuple[openpyxl.worksheet, dict, list]:
+    # returns the worksheet, column index dict, and list of value column names
+    def _get_worksheet_metaconfig_(self, sheet_name):
         
         # reset col_value_names
         col_value_names = []
         col_index = {}
-        worksheet = self._get_worksheet_(sheet_name)
+        wksheet = self._get_worksheet_(sheet_name)
                 
         # read first row to get column names
-        first_row = [cell.value for cell in worksheet[1]]
+        first_row = [cell.value for cell in wksheet[1]]
 
         if ("param" not in first_row):
             raise MissingColumnError("param", sheet_name)
@@ -303,18 +296,16 @@ class ConfigXlsxReader:
         
         # convert list to dict of column name to 1 based index
         col_index = {col_name: idx + 1 for idx, col_name in enumerate(first_row)} 
-        
+        print(col_index)
         # check the rows are the meta-config 
-        if not self.worksheet.cell(row=2, column=col_index["type"]).value == "meta-config":
+        if not wksheet.cell(row=2, column=col_index["type"]).value == "meta-config":
             raise ConfigXlsxReaderError(f"Second row of sheet '{sheet_name}' must be 'meta-config' row.")
         
         # get value columns
-        col_value_names = self.worksheet.cell(row=2, column=col_index["value"]).value.split(",")
-        
+        col_value_names = [name.strip() for name in wksheet.cell(row=2, column=col_index["value"]).value.split(",")]
 
+        return wksheet, col_index, col_value_names
 
-        return worksheet, col_index, col_value_names
-        
         
         
         
@@ -322,7 +313,7 @@ class ConfigXlsxReader:
         
         
     
-    def _process_meta_sheet_(self, sheet_name: str) -> None:
+    def _process_meta_sheet_(self, sheet_name: str):
         """Process the meta configuration sheet."""
         sheet = self.workbook[sheet_name]
         header_row = self._find_header_row_(sheet)
@@ -356,7 +347,7 @@ class ConfigXlsxReader:
     
 
 
-    def _find_header_row_(self, sheet) -> Optional[int]:
+    def _find_header_row_(self, sheet):
         """Find the header row in the sheet."""
         for row_idx in range(1, min(10, sheet.max_row + 1)):  # Check first 10 rows
             row_values = self._get_row_values_(sheet, row_idx)
@@ -364,12 +355,12 @@ class ConfigXlsxReader:
                 return row_idx
         return None
     
-    def _get_row_values_(self, sheet, row_idx: int) -> List[str]:
+    def _get_row_values_(self, sheet, row_idx: int):
         """Get values from a row, converting to strings."""
         values = [str(cell.value).strip() if cell.value is not None else "" for cell in sheet[row_idx]]
         return values
     
-    def _parse_value_columns_(self, value_str: str) -> List[int]:
+    def _parse_value_columns_(self, value_str: str):
         """Parse value column string into column indices."""
         if not value_str or value_str.lower() == 'value':
             # Default to just the value column
@@ -392,7 +383,7 @@ class ConfigXlsxReader:
     
 
     
-    def _get_cell_by_value_(self, sheet, value: str) -> Optional[object]:
+    def _get_cell_by_value_(self, sheet, value: str):
         """Find a cell with the given value in the sheet."""
 
         if not value:
@@ -403,7 +394,7 @@ class ConfigXlsxReader:
 
     ########################################
     
-    def _extract_cell_style_(self, cell) -> Dict:
+    def _extract_cell_style_(self, cell):
         """Extract style properties from a cell."""
         style = {}
         
@@ -438,7 +429,7 @@ class ConfigXlsxReader:
     
     
     
-    def _extract_border_style_(self, cell) -> Dict:
+    def _extract_border_style_(self, cell):
         """Extract border style properties from a cell."""
         border_style = {}
         
