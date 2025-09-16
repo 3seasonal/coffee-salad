@@ -95,8 +95,8 @@ class ConfigXlsxReader:
         """       
         # parse the config-main sheet and follow the configuration tree
         parsed_config = self._parse_worksheet_("config-main")
-        
-        return parsed_config.calendar, parsed_config.columns, parsed_config.events, parsed_config.styles
+
+        return parsed_config['calendar'], parsed_config['columns'], parsed_config['events'], parsed_config['styles']
 
 
 
@@ -138,10 +138,10 @@ class ConfigXlsxReader:
 
                 # Handle different prinitive types for the row value
                 if param_type.startswith("style-cell"):
-                    output_dict[param] = self._extract_cell_style(row[col_names['value'] - 1])
+                    output_dict[param] = self._extract_cell_style_(row[col_names['value'] - 1])
 
                 elif param_type.startswith("style-border"):
-                    output_dict[param] = self._extract_cell_border_style(row[col_names['value'] - 1])
+                    output_dict[param] = self._extract_border_style_(row[col_names['value'] - 1])
 
                 elif param_type == "string":
                     output_dict[param] = value
@@ -173,7 +173,7 @@ class ConfigXlsxReader:
                     sub_dict = {}
 
                     for subcol in col_names:
-                        subcol_value = row[col_names[subcol] - 1].value.strip() if row[col_names[subcol] - 1].value else ""
+                        subcol_value = row[col_names[subcol] - 1].value if row[col_names[subcol] - 1].value else ""
 
                         if "_" in subcol:
                             # Split the column name to get the type suffix
