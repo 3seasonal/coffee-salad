@@ -12,36 +12,46 @@
     Description:    Class for kicking it all off
 
 """
+from calendar_util import CalendarUtil
+from datetime import datetime
+import os
 
 # currently just a testing script
 def main():
     print("Welcome to the Coffee-Salad Calendar Application!")
     
     # get the path to the folder this script is in:
-    import os
     script_dir = os.path.dirname(os.path.abspath(__file__))
     print(f"Script is located in: {script_dir}")
     
+    dt = datetime.now().strftime('%Y%m%d_%H%M')
+    logpath = os.path.join(script_dir, 'log')
+    logname = f'calendar_app_{dt}.log'
+
+    # load utils
+    util = CalendarUtil(logpath=logpath, logname=logname)
+    log = util.get_logger()
+
     testxlsx = os.path.join(script_dir, 'calendar_template.xlsx')
     
     if not os.path.exists(testxlsx):
         raise FileNotFoundError(f"Template file not found: {testxlsx}")
     
     from config_xlsx_reader import ConfigXlsxReader
-    xlsx_reader = ConfigXlsxReader(testxlsx)
+    xlsx_reader = ConfigXlsxReader(xlsx_path=testxlsx, logger=log)
     
     calendar, columns, events, styles = xlsx_reader.read_config()
     
     # pretty print dictionaries:
     import pprint
     pp = pprint.PrettyPrinter(indent=4)
-    print("Calendar Configuration:")
+    log.log("Calendar Configuration:")
     pp.pprint(calendar)
-    print("Columns Configuration:")
+    log.log("Columns Configuration:")
     pp.pprint(columns)
-    print("Events Configuration:")
+    log.log("Events Configuration:")
     pp.pprint(events)
-    print("Styles Configuration:")
+    log.log("Styles Configuration:")
     pp.pprint(styles)
     
     

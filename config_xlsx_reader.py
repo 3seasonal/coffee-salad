@@ -5,25 +5,12 @@ from openpyxl.utils import get_column_letter, column_index_from_string
 import datetime
 from typing import Dict, List, Any, Tuple, Optional, Union
 import os
-import logging
+import logging  
 
-# Configure logging
-logger = logging.getLogger("ConfigXlsxReader")
-logger.setLevel(logging.DEBUG)
 
-# Console handler for info-level logs
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_formatter = logging.Formatter("%(levelname)s: %(message)s")
-console_handler.setFormatter(console_formatter)
-logger.addHandler(console_handler)
 
-# File handler for debug-level logs
-file_handler = logging.FileHandler("config_xlsx_reader.log", mode="a")
-file_handler.setLevel(logging.DEBUG)
-file_formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s]: %(message)s")
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
+
+
 
 # Custom exception classes for ConfigXlsxReader
 class ConfigXlsxReaderError(Exception):
@@ -56,11 +43,14 @@ class ConfigXlsxReader:
     - styles: Styles used in the calendar
     """
     
-    def __init__(self, xlsx_path: str):
+    def __init__(self, xlsx_path: str, logger=None):
         """Initialize the reader with the path to the Excel file."""
         self.xlsx_path = xlsx_path
         self.worksheet = {} #list of worksheets in the workbook
         
+        #set up logging
+        self.log = logger or logging.getLogger(__name__)
+
         # Output dictionaries
         self.calendar = {}
         self.columns = {}

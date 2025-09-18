@@ -56,6 +56,8 @@ class CalendarUtil:
         self.logger.debug(f'set file-logging to {file_level} level')
         self.logger.info(f'set console-logging to {console_level} level')
 
+    def get_logger(self):
+        return self.logger
 
     ## Log a message to output
     def log(self, message, level='INFO'):
