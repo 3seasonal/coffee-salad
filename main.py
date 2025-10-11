@@ -12,9 +12,16 @@
     Description:    Class for kicking it all off
 
 """
-from calendar_util import CalendarUtil
-from datetime import datetime
+import sys
 import os
+from datetime import datetime
+
+# Ensure the project root (script directory) is on sys.path so local modules can be imported
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+from calendar_util import CalendarUtility
 
 # currently just a testing script
 def main():
@@ -29,9 +36,10 @@ def main():
     logname = f'calendar_app_{dt}.log'
 
     # load utils
-    util = CalendarUtil(logpath=logpath, logname=logname)
+    util = CalendarUtility(logpath=logpath, logname=logname)
     log = util.get_logger()
 
+    # load test xlsx file
     testxlsx = os.path.join(script_dir, 'calendar_template.xlsx')
     
     if not os.path.exists(testxlsx):

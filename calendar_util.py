@@ -9,8 +9,8 @@ handles logging
 
 '''
 
-# CalendarUtil
-class CalendarUtil:
+# Calendar Utility Class
+class CalendarUtility:
     def __init__(self, logpath=None, logname=None):
         # Constructor - Initialize the object
         self._datetime = datetime.now().strftime('%Y%m%d_%H%M')
