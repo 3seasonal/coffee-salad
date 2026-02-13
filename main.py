@@ -21,7 +21,10 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
-from calendar_util import CalendarUtility
+# import local modules
+from calendar_util import CalendarUtility #for logging and other utilities
+from calendar_xlsx_writer import calendarXlsxCreator #for writing the calendar xlsx file
+
 
 # currently just a testing script
 def main():
@@ -62,6 +65,17 @@ def main():
     log.log("Styles Configuration:")
     pp.pprint(styles)
     
+    # initialise the writer
+    xlsx_writer = calendarXlsxCreator(
+        config= {
+            'calendar': calendar,
+            'columns': columns,
+            'events': events,
+            'styles': styles    
+            },
+        logger=log,
+        dt=dt)
+
     
     
     
