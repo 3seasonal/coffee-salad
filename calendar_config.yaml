@@ -11,6 +11,5 @@
     
 """
 
-config_source_name: calendar_template.xlsx
-
+config_source_name: calendar_config.xlsx
 

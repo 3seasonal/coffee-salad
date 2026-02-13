@@ -135,12 +135,12 @@ The application includes these main classes:
 ```mermaid
 flowchart LR
     %% Nodes
-    A[Calendar_config.yaml]:::config --- C[calendar_creator]:::module
+    A[calendar_config.yaml]:::config --- C[.py]:::module
     B[calendar_util.py]:::module --- C
     D[main.py]:::module --- C
     E[config_xlsx_reader.py]:::module --- C
     F[config_xlsx_writer.py]:::module --- C
-    G[Calendar_template.xlsx]:::file --- E
+    G[calendar_config.xlsx]:::file --- E
     G --- F
     C --- H[output_calendar.xlsx]:::file
 
