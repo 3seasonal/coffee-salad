@@ -11,7 +11,6 @@ import logging
 
 
 
-
 # Custom exception classes for ConfigXlsxReader
 class ConfigXlsxReaderError(Exception):
     """Base exception for ConfigXlsxReader errors."""
@@ -47,6 +46,23 @@ class ConfigXlsxReader:
         """Initialize the reader with the path to the Excel file."""
         self.xlsx_path = xlsx_path
         self.worksheet = {} #list of worksheets in the workbook
+        
+        self.COLOR_INDEX = [ # Default Color Index as per 18.8.27 of ECMA Part 4
+            '00000000', '00FFFFFF', '00FF0000', '0000FF00', '000000FF', #0-4
+            '00FFFF00', '00FF00FF', '0000FFFF', '00000000', '00FFFFFF', #5-9
+            '00FF0000', '0000FF00', '000000FF', '00FFFF00', '00FF00FF', #10-14
+            '0000FFFF', '00800000', '00008000', '00000080', '00808000', #15-19
+            '00800080', '00008080', '00C0C0C0', '00808080', '009999FF', #20-24
+            '00993366', '00FFFFCC', '00CCFFFF', '00660066', '00FF8080', #25-29
+            '000066CC', '00CCCCFF', '00000080', '00FF00FF', '00FFFF00', #30-34
+            '0000FFFF', '00800080', '00800000', '00008080', '000000FF', #35-39
+            '0000CCFF', '00CCFFFF', '00CCFFCC', '00FFFF99', '0099CCFF', #40-44
+            '00FF99CC', '00CC99FF', '00FFCC99', '003366FF', '0033CCCC', #45-49
+            '0099CC00', '00FFCC00', '00FF9900', '00FF6600', '00666699', #50-54
+            '00969696', '00003366', '00339966', '00003300', '00333300', #55-59
+            '00993300', '00993366', '00333399', '00333333', '00000000', #60-64 - Assueme foreground colour (64) is black
+        ]
+
         
         #set up logging
         self.log = logger or logging.getLogger(__name__)
@@ -88,6 +104,45 @@ class ConfigXlsxReader:
 
         return parsed_config['calendar'], parsed_config['columns'], parsed_config['events'], parsed_config['styles']
 
+    def _color_as_argb_(self, color):
+        """
+        Convert an openpyxl Color object to a hex string.
+        This method handles conversion of different color types supported by openpyxl,
+        explicitly RGB and indexed colors, returning them as hex color strings.
+        See: https://openpyxl.readthedocs.io/en/3.1/styles.html#colors for more details on openpyxl color handling.
+        Note: The alpha value refers in theory to the transparency of the colour but this is not relevant for cell styles. The default of 00 will prepended to any simple RGB value
+        Args:
+            color: An openpyxl Color object or None.
+        Returns:
+            str: A hex color string in the format "#RRGGBB" or "#RRGGBBAA" if alpha is present.
+                 Returns None if color is None or if the color type is not supported.
+        Raises:
+            none.
+        """
+        if color is None:
+            return None
+        
+        #rgb is stored
+        if color.type == 'rgb' and color.rgb is not None:
+            
+            # if is rgb vvalue convert to argb by prepending alpha value of 00 (fully opaque) if not already present
+            if len(color.rgb) == 6: # simple RGB value
+                return f"00{color.rgb}"
+            
+            if len(color.rgb) == 8: # already in ARGB format
+                return f"{color.rgb}"
+            else:
+                self.log.warning(f"Unexpected RGB color format: '{color.rgb}'. Expected 6 or 8 characters. Returning {len(color.rgb)}.")            
+        
+        # return indexed color if indexed
+        elif color.type == 'indexed' and color.indexed is not None:
+            indexed_color = self.COLOR_INDEX[int(color.indexed)]
+            return f"#{indexed_color}"  # Remove alpha channel if present
+        
+        # welp we tried 
+        else:
+            self.log.critical(f"Unsupported color type or missing color value: '{color}'. Returning None.")
+            return None
 
 
     def _parse_worksheet_(self, worksheet_name):
@@ -198,6 +253,9 @@ class ConfigXlsxReader:
                     output_dict[param] = sub_dict
 
                 ## Handle config reference recursion
+                elif param_type == "meta":
+                    self.log.debug(f"Found meta-config reference in '{worksheet_name}', row {row[0].row}: '{param}' -> '{value}'")
+                    # do nothing
                 elif param_type == "config":
                     ref_sheet_name = value.strip().lower()
                     if ref_sheet_name != "":
@@ -272,6 +330,9 @@ class ConfigXlsxReader:
         # reset col_value_names
         col_value_names = []
         col_index = {}
+        self.log.info(f"Processing worksheet '{sheet_name}'")
+        if sheet_name not in self.workbook.sheetnames:
+            raise ValueError(f"Worksheet '{sheet_name}' does not exist in the workbook containing: ({', '.join(self.workbook.sheetnames)})")
         wksheet = self._get_worksheet_(sheet_name)
                 
         # read first row to get column names
@@ -395,15 +456,15 @@ class ConfigXlsxReader:
                 "size": cell.font.size,
                 "bold": cell.font.bold,
                 "italic": cell.font.italic,
-                "color": cell.font.color.rgb if cell.font.color else None
+                "color": self._color_as_argb_(cell.font.color) if cell.font.color else None
             }
         
         # Fill properties
         if cell.fill:
             style["fill"] = {
                 "type": cell.fill.fill_type,
-                "start_color": cell.fill.start_color.rgb if cell.fill.start_color else None,
-                "end_color": cell.fill.end_color.rgb if cell.fill.end_color else None
+                "start_color": self._color_as_argb_(cell.fill.start_color) if cell.fill.start_color else None,
+                "end_color": self._color_as_argb_(cell.fill.end_color) if cell.fill.end_color else None
             }
         
         # Alignment properties
@@ -432,7 +493,8 @@ class ConfigXlsxReader:
             if border_side:
                 border_style[side] = {
                     "style": border_side.style,
-                    "color": border_side.color.rgb if border_side.color else None
+                    "color": self._color_as_argb_(border_side.color) if border_side.color else None
+                    
                 }
                 
         return border_style
