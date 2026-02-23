@@ -24,6 +24,16 @@ import logging
     
 class CalendarXlsxCreatorError():
     def __init__(self, raised_error_message: str):
+        '''
+        Simple error class for handling errors in the calendarXlsxCreator class. It takes a string message as input and formats it for display.
+        
+        Args:
+            raised_error_message (str): The error message to be displayed when the exception is raised.
+        Returns:
+            None
+        Raises:
+            None
+        '''
         super().__init__(
             f"Exception in the XLSX Creator: {raised_error_message}"
         )
@@ -38,7 +48,20 @@ class calendarXlsxCreator:
 
     
     def __init__(self, config: dict, logger=None, ts=datetime.datetime.now().strftime('%Y%m%d_%H%M%S')):
-        """Initialize the xlsx calenadarcreator with the path to the Excel file."""
+        """Initialize the xlsx calenadarcreator with the path to the Excel file.
+        
+        Args:
+            config (dict): The configuration dictionary containing calendar settings.
+            logger (logging.Logger, optional): A logger instance for logging messages. Defaults to None.
+            ts (str, optional): A timestamp string to be used in the file name. Defaults to the current date and time in 'YYYYMMDD_HHMMSS' format.
+            
+        Returns:
+            None
+            
+        Raises:
+            CalendarXlsxCreatorError: If there is an error during initialization, such as missing configuration.
+        
+        """
         
         #set up logging
         self.log = logger or logging.getLogger(__name__)
@@ -56,7 +79,6 @@ class calendarXlsxCreator:
         else:
             self.config = config # store the config for later use, but it is not used directly in this class. It is passed to the calendarXLSXUpdator for processing.
             # contains sub-dictionaries: calendar, columns, events, styles.
-       
                    
         # Handle the creation of the calendar XLSX file. If it does not exist,
         self.xlsx_name = config.get("calendar", {}).get("xlsx_name")
@@ -77,11 +99,24 @@ class calendarXlsxCreator:
         self.workbook = openpyxl.Workbook()
         self.log.info(f"New XLSX workbook created at {self.xlsx_path}.")
         
-        
+        # INITIALISE TRACKERS:
+        self.category_list = [] # list of categories in the calendar, used for indexing the columns 
+        .....
+                
         
         
     def save(self):
-        """Save the workbook to the specified path."""
+        """Save the workbook to the specified path.
+        
+        Args:
+            None
+        Retrns:
+            None
+        
+        Raises:
+            CalendarXlsxCreatorError: If there is an error saving the workbook.
+        
+        """
         try:
             self.workbook.save(self.xlsx_path)
             self.log.info(f"Workbook saved successfully at {self.xlsx_path}.")
@@ -98,6 +133,7 @@ save
 
 
 functions:
+- load config (on initialisation)
 - create worksheet
 - save workbook
 
@@ -105,6 +141,8 @@ functions:
 - add style to workbook
 
 - event_is_multiday
+
+- add event.
 
 ---
 create matrix.
@@ -115,6 +153,8 @@ create matrix.
         column 2 day of the week - given a column, return the day of the week index.
         day of the weeek - iso index
         list of styles created
+        
+        SELF.
         
     create styles
         and add to style created list
