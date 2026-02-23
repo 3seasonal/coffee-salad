@@ -34,9 +34,10 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     print(f"Script is located in: {script_dir}")
     
-    dt = datetime.now().strftime('%Y%m%d_%H%M')
+    ts = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    ds = datetime.datetime.now().strftime('%Y%m%d')
     logpath = os.path.join(script_dir, 'log')
-    logname = f'calendar_app_{dt}.log'
+    logname = f'calendar_app_{ts}.log'
 
     # load utils
     util = CalendarUtility(logpath=logpath, logname=logname)
@@ -74,7 +75,7 @@ def main():
             'styles': styles    
             },
         logger=log,
-        dt=dt)
+        ts=ts)
 
     
     

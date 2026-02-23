@@ -1,0 +1,1262 @@
+#################
+# structure:
+# - calendar: the configuration for making the calendar
+# - columns
+# bg_color: (optional) the background color of the cell
+
+
+calendar:
+
+  #################
+  # calander base functionality
+  xlsx_name: 2025_calendar_generated.xlsx
+  worksheet_name: 2025 by week
+  start_row: 1 #1 based
+  start_column: 1 #1 based
+  year: 2025
+  week_stats_on: 1 #Monday as per ISO8601
+  underflow: 3 #no of rows (or other type) before the start and end date - rounded
+  overflow: 3 #no of rows (or other type) after the start and end date - rounded
+  mode: dev 
+  debug: True
+  date_style: date
+  date_legend_style: date_legend
+  column_heading_style: heading
+
+  #################
+  # calander columns
+  # columns{
+  #   xcolumn{
+  #   type: iterator/term/week_day/annotation
+  #   iterate: True/False
+  #   (start):x
+  #   (increment):x
+  #   (terms){
+  #     term_name{
+  #       start_date: yyyy-mm-dd
+  #       end_date: yyyy-mm-dd
+  #       bg_color: 000000  
+  #     }
+  #   width: 00
+  #   }
+  # } 
+  # }
+  
+  columns:
+    # week number
+    week:
+      type: iterator
+      start: 1
+      increment: 1
+      width: 6
+      style: week
+    
+    # university Trimesters
+    Uni:
+      type: term
+      iterate: True
+      start: 1
+      style: uni-heading
+      terms:
+        summer school:
+          start_date: 2025-01-06
+          end_date: 2025-02-28
+          style: uni-tri-ss
+        trimester 1:
+          start_date: 2025-02-03
+          end_date: 2025-05-10
+          style: uni-tri-1
+        trimester 2:
+          start_date: 2025-05-26
+          end_date: 2025-08-30
+          style: uni-tri-2
+        trimester 3:
+          start_date: 2025-09-08
+          end_date: 2025-12-06
+          style: uni-tri-3
+      width: 12
+
+    # School terms
+    school:
+      type: term
+      iterate: True
+      start: 1
+      style: school-heading
+      terms:
+        term 1:
+          start_date: 2025-01-28
+          end_date: 2025-04-11
+          style: school-term-1
+        term 2:
+          start_date: 2025-04-28
+          end_date: 2025-07-04
+          style: school-term-2
+        term 3:
+          start_date: 2025-07-21
+          end_date: 2025-09-26
+          style: school-term-3
+        term 4:
+          start_date: 2025-10-13
+          end_date: 2025-12-12
+          style: school-term-4
+      width: 12
+
+    # legend - required for row labeling
+    legend:
+      type: annotation
+      iterate: False
+      width: 17
+      style: legend
+
+    # The main calendar columns
+    monday:
+      type: week_day
+      iterate: False
+      width: 20
+      style: date
+    tuesday:
+      type: week_day
+      iterate: False
+      width: 20
+      style: date
+    wednesday:
+      type: week_day
+      iterate: False
+      width: 20
+      style: date
+    thursday:
+      type: week_day
+      iterate: False
+      width: 20
+      style: date
+    friday:
+      type: week_day
+      iterate: False
+      width: 20
+      style: date
+    saturday:
+      type: week_day
+      iterate: False
+      width: 30
+      style: date
+    sunday:
+      type: week_day
+      iterate: False
+      width: 30
+      style: date
+
+    # Empty Notes
+    notes:
+      type: annotation
+      iterate: False
+
+    # Leave days
+    leave:
+      type: annotation
+      iterate: False
+
+
+#################
+# Events  - used for rows
+#################
+# evets{
+#   event_type{
+#     event_name{
+#       date: yyyy-mm-dd or:
+#       (start_date: yyyy-mm-dd
+#       end_date: yyyy-mm-dd)
+#       description: xxxx
+#       fixed_date: True/False
+#     }
+#   }
+
+events:
+
+  # dates are here
+
+  # public holidays
+  public_holidays:
+    style: public_holidays
+    style_legend: public_holidays_legend
+    style_legend_empty: legend_empty
+    description: asdd
+    events:
+      new years day: 
+        start_date: 2025-01-01
+        description: xxxx
+        fixed_date: True
+      good friday: 
+        start_date: 2025-07-04
+        description: xxxx
+        fixed_date: False
+      easter monday: 
+        start_date: 2025-07-07
+        description: xxxx
+        fixed_date: False
+      anzac day: 
+        start_date: 2025-04-25
+        description: xxxx
+        fixed_date: True
+      kings birthday holiday: 
+        start_date: 2025-06-02
+        description: xxxx
+        fixed_date: True
+      labour day: 
+        start_date: 2025-10-27
+        description: xxxx
+        fixed_date: True
+      christmas day: 
+        start_date: 2025-12-25
+        description: xxxx
+        fixed_date: True
+      boxing day: 
+        start_date: 2025-12-26
+        description: xxxx
+        fixed_date: True
+
+  # School relarted events
+  school:
+    style: school
+    style_legend: school_legend
+    style_legend_empty: legend_empty
+    description: dfgfdg
+    events:
+      pupil free day: 
+        start_date: 2025-01-10
+        description: xxxx
+      show_day: 
+        start_date: 2025-01-10
+        description: xxxx
+      christmas_concert: 
+        start_date: 2025-12-10
+        description: xxxx
+      interviews:
+        start_date: 2025-10-01
+        description: xxxx
+      open_night:
+        start_date: 2025-10-01
+        description: xxxx
+
+  # multi day events or festivals dates usually change each year
+  multi_day_events:
+    style: multi_day_events
+    style_legend: multi_day_events_legend
+    style_legend_empty: legend_empty
+    description: dfgdfgd
+    events:
+      ramadan:
+        start_date: 2025-12-20
+        end_date: 2026-01-31
+        description: Ramadan is the ninth month of the Islamic calendar, observed by Muslims worldwide as a month of fasting, prayer, reflection and community. A commemoration of Muhammad's first revelation, the annual observance of Ramadan is regarded as one of the Five Pillars of Islam and lasts twenty-nine to thirty days, from one sighting of the crescent moon to the next.
+        fixed_date: False
+      eurovision:
+        start_date: 2025-04-10
+        end_date: 2025-04-27
+        description: The Eurovision Song Contest by the European Broadcasting Union, the world's foremost alliance of public service media, representing 116 member organizations in 56 countries and an additional 34 Associates in Asia, Africa, Australasia and the Americas.
+        fixed_date: False
+
+  # International days - and other dates of significance
+  observances:
+    style: observances
+    style_legend: observances_legend
+    style_legend_empty: legend_empty
+    description: wretrw
+    events:
+      pi_day:
+        start_date: 2025-03-14
+        description: Pi Day is an annual celebration of the mathematical constant π (pi). Pi Day is observed on March 14 (3/14 in the month/day format) since 3, 1, and 4 are the first three significant digits of π.
+        fixed_date: True
+      international_pronouns_day:
+        start_date: 2025-10-15
+        description: International Pronouns Day seeks to make respecting, sharing, and educating about personal pronouns commonplace. Referring to people by the pronouns they determine for themselves is basic to human dignity. Being referred to by the wrong pronouns particularly
+        fixed_date: True
+
+  # Birthdays - happy birthday to you
+  birthdays:
+    style: birthdays
+    style_legend: birthdays_legend
+    style_legend_empty: legend_empty
+    description: rwerwrew
+    events:
+      john_doe:
+        start_date: 2025-01-01
+        birthday: 1999-01-01 
+        description: John Doe's birthday
+        fixed_date: True
+
+  # family events - holidays, social gatherings, birthday parties, etc
+  family and friends:
+    style: family
+    style_legend: family_legend
+    style_legend_empty: legend_empty
+    description: werwerwe
+    events:
+      mothers day:
+        start_date: 2025-05-11
+        description: Family get-to-gether
+        fixed_date: False
+      Caribean holiday:
+        start_date: 2025-04-10
+        end_date: 2025-04-27
+        description: Father's Day is a celebration honoring fathers and celebrating fatherhood, paternal bonds, and the influence of fathers in society.
+        fixed_date: False
+
+  # work events - meetings, conferences, leave, etc
+  work:
+    style: work
+    style_legend: work_legend
+    style_legend_empty: legend_empty
+    description: fgggg
+    events:
+      an important team meeting:
+        start_date: 2025-01-10
+        description: Team meeting
+      IMW conference:
+        start_date: 2025-04-10
+        end_date: 2025-04-27
+        description: Conference
+      study_leave:
+        start_date: 2025-03-10
+        description: Leave day
+
+  # study events - seminars, exams, due dates, etc
+  study:
+    style: study
+    style_legend: study_legend
+    style_legend_empty: legend_empty
+    description: llllllll
+    events:
+      exam for butchery:
+        start_date: 2025-01-10
+        description: Exam
+      big seminar:
+        start_date: 2025-02-10
+        description: Seminar
+      paper due date:
+        start_date: 2025-03-10
+        description: Microwave cooking assignment Due date
+
+#################
+# Styles - see https://openpyxl.readthedocs.io/en/3.1.3/styles.html
+#styles:
+# style_name:
+#   font:
+#     name: Arial
+#     size: 12
+#     bold: True/False
+#     italic: True/False
+#     strike: True/False
+#     underline: none/single/double 
+#     color: 000000
+#   fill:
+#     fill_type: solid
+#     fgColor: 00FF0000   as ttRRGGBB t=transparency
+#   border:
+#     left:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#      right:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#      top:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#      bottom:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#   alignment:
+#     horizontal: general/left/center/right/fill/justify/centerContinuous/distributed
+#     vertical: bottom/center/top/justify/distributed
+#     text_rotation: 0
+#     wrap_text: True/False
+#     shrink_to_fit: True/False
+#     indent: 0
+#   number_format: general/0/0.00/0.00%/
+#   protection:
+#     locked: True/False
+#     hidden: True/False
+
+styles:
+
+  font_only:
+    font:
+      name: Arial
+      size: 7
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: 'FF0000'
+    
+  fill_only:
+    fill:
+      fill_type: solid
+      fgColor: 'AAAAAA'
+
+  border_only: 
+    border:
+      left:
+        border_style: thin
+        color: '444444'
+      right:
+        border_style: thin
+        color: '444444'
+      top:
+        border_style: thin
+        color: '444444'
+      bottom:
+        border_style: thin
+        color: '444444'
+
+  alignment_only:      
+    alignment:
+      horizontal: center
+      vertical: bottom
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+
+  number_format_only: 
+    number_format: general
+    protection:
+      locked: True
+      hidden: False
+
+  week:
+    font:
+      name: Arial
+      size: 7
+      bold: False
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    alignment:
+      horizontal: center
+      vertical: bottom
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    number_format: general
+    protection:
+      locked: True
+      hidden: False
+
+  heading:
+    font:
+      name: Arial
+      size: 7
+      bold: False
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: 'FFFFFFFF'
+    border:
+      bottom:
+        border_style: double
+        color: '444444'
+    alignment:
+      horizontal: center
+      vertical: bottom
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    number_format: general
+    protection:
+      locked: True
+      hidden: False
+
+  # date styles
+  date:
+    font:
+      name: Arial
+      size: 8
+      bold: False
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: 'CCCCCC'
+    border:
+      left:
+        border_style: thin
+        color: '000000'
+      right:
+        border_style: thin
+        color: '000000'
+      top:
+        border_style: thin
+        color: '000000'
+      bottom:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  # University styles
+  uni-heading:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '999999'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+      bottom:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  uni-tri-ss:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: 'FF0000'
+    fill:
+      fill_type: solid
+      fgColor: '000080'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  uni-tri-1:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: 'FF0000'
+    fill:
+      fill_type: solid
+      fgColor: '9999FF'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  uni-tri-2:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: 'CCFFCC'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  uni-tri-3:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '33CCCC'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+  
+  # School styles
+  school-heading:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '003300'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  school-term-1:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '969696'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+  
+  school-term-2:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '00CCFF'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  school-term-3:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '99CC00'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  school-term-4:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: 'FF6600'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  # legend rows
+  legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: False
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    border:
+      top:
+        border_style: thin
+        color: '000000'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  legend_empty:
+    font:
+      name: Arial
+      size: 5
+      bold: False
+      italic: True
+      strike: False
+      underline: none 
+      color: '0A0A0A'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+  
+  public_holidays_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  public_holidays:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '0000FF'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  school_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+  
+  school:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '00FF00'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  multi_day_events_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+  
+  multi_day_events:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: 'FF0000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  observances_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  observances:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '0000ff'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  birthdays_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  birthdays:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '0000FF'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  family_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+  
+  family:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '0000FF'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  work_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  work:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '123456'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+
+  study_legend:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '000000'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+  study:
+    font:
+      name: Arial
+      size: 8
+      bold: True
+      italic: True
+      strike: False
+      underline: none 
+      color: '654321'
+    fill:
+      fill_type: solid
+      fgColor: '0066CC'
+    alignment:
+      horizontal: center
+      vertical: center
+      text_rotation: 0
+      wrap_text: True
+      shrink_to_fit: False
+      indent: 0
+    #number_format: ddd dd-mmm
+    protection:
+      locked: True
+      hidden: False
+
+side_styles:
+  days:
+    border_style: thin #{'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+    color: '333333'
+  default:
+    border_style: thin #{'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+    color: '000000'
+  month:
+    border_style: thick #{'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+    color: 'FF0000'
+  year:
+    border_style: double #{'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+    color: '88FF00'
+
+
+#################
+# scheduled events  - used for rows - types are joined to fixed events
+#################
+# scheduled events{
+#   event_type{
+#     event_name{..... check for standardised convention
+#       start_date: yyyy-mm-dd
+#       end_date: yyyy-mm-dd)
+#       description: xxxx
+#       schedule_frequency: weekly, monthly
+#       scheduled: first
+#       scheduled_day: Monday/Tuesday/Wednesday/Thursday/Friday/Saturday/Sunday:
+#       scheduled_date: 12 
+#     }
+#   }

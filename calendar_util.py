@@ -59,6 +59,48 @@ class CalendarUtility:
         self.logger.debug(f'set file-logging to {file_level} level')
         self.logger.info(f'set console-logging to {console_level} level')
 
+        # set default openXLS colors
+        self.COLOR_INDEX = [ # Default Color Index as per 18.8.27 of ECMA Part 4
+            '00000000', '00FFFFFF', '00FF0000', '0000FF00', '000000FF', #0-4
+            '00FFFF00', '00FF00FF', '0000FFFF', '00000000', '00FFFFFF', #5-9
+            '00FF0000', '0000FF00', '000000FF', '00FFFF00', '00FF00FF', #10-14
+            '0000FFFF', '00800000', '00008000', '00000080', '00808000', #15-19
+            '00800080', '00008080', '00C0C0C0', '00808080', '009999FF', #20-24
+            '00993366', '00FFFFCC', '00CCFFFF', '00660066', '00FF8080', #25-29
+            '000066CC', '00CCCCFF', '00000080', '00FF00FF', '00FFFF00', #30-34
+            '0000FFFF', '00800080', '00800000', '00008080', '000000FF', #35-39
+            '0000CCFF', '00CCFFFF', '00CCFFCC', '00FFFF99', '0099CCFF', #40-44
+            '00FF99CC', '00CC99FF', '00FFCC99', '003366FF', '0033CCCC', #45-49
+            '0099CC00', '00FFCC00', '00FF9900', '00FF6600', '00666699', #50-54
+            '00969696', '00003366', '00339966', '00003300', '00333300', #55-59
+            '00993300', '00993366', '00333399', '00333333', '00000000', #60-64 - Assueme foreground colour (64) is black
+        ]
+        
+        
+    def get_color_at_index(self, index=None):
+        '''
+        Return the color at the specified index from the COLOR_INDEX list. 
+        If no index is provided, return the entire COLOR_INDEX list.
+        See: https://openpyxl.readthedocs.io/en/3.1/styles.html#colors for more details on openpyxl color handling.
+        Note: The alpha value refers in theory to the transparency of the colour but this is not relevant for cell styles. The default of 00 will prepended to any simple RGB value
+        Args:
+            index (int, optional): The index of the color to retrieve from the COLOR_INDEX list. If None, the entire COLOR_INDEX list will be returned. Defaults to None.
+        Returns:
+            str or [str]: A hex color string in the format "AARRGGBB" - note the alpha chanel refers to the transparency of the colour but this is not relevant for cell styles. The default of 00 will prepended to any simple RGB value.
+        Raises:
+            none.
+        
+        '''    
+        # return the color at the index
+        if index is not None and 0 <= index < len(self.COLOR_INDEX):
+            return self.COLOR_INDEX[index]
+        
+        # otherwise return the whole list
+        if not index:
+            return self.COLOR_INDEX
+        
+    
+
     def get_logger(self):
         return self.logger
 

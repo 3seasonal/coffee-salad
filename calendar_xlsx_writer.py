@@ -37,7 +37,7 @@ class calendarXlsxCreator:
     
 
     
-    def __init__(self, config: dict, logger=None, dt=datetime.now().strftime('%Y%m%d_%H%M')):
+    def __init__(self, config: dict, logger=None, ts=datetime.datetime.now().strftime('%Y%m%d_%H%M%S')):
         """Initialize the xlsx calenadarcreator with the path to the Excel file."""
         
         #set up logging
@@ -88,3 +88,117 @@ class calendarXlsxCreator:
         except Exception as e:
             self.log.error(f"Failed to save workbook: {e}")
             raise CalendarXlsxCreatorError(f"Failed to save workbook: {e}")
+        
+## algorithm - to be implemetned later:
+
+'''
+create worksheet
+
+save
+
+
+functions:
+- create worksheet
+- save workbook
+
+- update cell style
+- add style to workbook
+
+- event_is_multiday
+
+---
+create matrix.
+    create trackers:
+        catagory list - index of each catagory releative to the date row
+        date index - given a date, return the row and col index
+        days of the week 2 column - given a day of the week which column
+        column 2 day of the week - given a column, return the day of the week index.
+        day of the weeek - iso index
+        list of styles created
+        
+    create styles
+        and add to style created list
+        
+    populate numbers and dates in calendar.
+        and colour the cells as they are created.
+    
+    
+iterate events and populate the cells with the event data.
+    colour approparietately
+    
+    event matrix list - a dictionary of of key dates, 
+            each with a list of catagories.
+                each catagory with a list of events. (that are the key wihtin the config.events)
+                    each event is a touple of (event name, #day, of #days)
+    (in this way can events for colouring purposes)
+    
+    
+Add event
+
+    
+
+
+
+'''
+
+def create_worksheet(self, sheet_name: str):
+    
+    pass
+    # create a new worksheet with the given name
+    
+    # initialise the worksheet
+    
+    # set the current worksheet to the new worksheet (self.worksheet = self.workbook[sheet_name])
+    
+    
+def is_workbook_open(file_path):
+    """
+    Check if a specific Excel workbook is currently open.
+
+    Args:
+        file_path (str): The full path to the Excel workbook file.
+
+    Returns:
+        bool: True if the workbook is open, False otherwise.
+
+    Raises:
+        psutil.NoSuchProcess: If the process no longer exists.
+        psutil.AccessDenied: If the process cannot be accessed.
+    """
+    for proc in psutil.process_iter(['pid', 'name', 'open_files']):
+        try:
+            if proc.info['name'] == 'EXCEL.EXE':
+                for file in proc.info['open_files'] or []:
+                    if file.path == file_path:
+                        return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return False
+
+def close_workbook(file_path):
+    """
+    Closes the Excel workbook specified by the file path if it is currently open.
+
+    This function iterates through all running processes to find instances of 'EXCEL.EXE'.
+    If the specified file is found to be open by any of these processes, the process is terminated.
+
+    Args:
+        file_path (str): The full path to the Excel workbook to be closed.
+
+    Raises:
+        psutil.NoSuchProcess: If the process no longer exists.
+        psutil.AccessDenied: If the process cannot be accessed due to permission issues.
+
+    Returns:
+        None
+    """
+    for proc in psutil.process_iter(['pid', 'name', 'open_files']):
+        try:
+            if proc.info['name'] == 'EXCEL.EXE':
+                for file in proc.info['open_files'] or []:
+                    if file.path == file_path:
+                        proc.terminate()
+                        proc.wait()
+                        return
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue

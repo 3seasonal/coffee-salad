@@ -1,0 +1,387 @@
+#################
+# structure:
+# - calendar: the configuration for making the calendar
+# - columns
+
+
+calendar:
+
+  #################
+  # calander base functionality
+  xlsx_name: 2025_calendar_generated.xlsx
+  worksheet_name: 2025 by week
+  start_row: 2 #1 based
+  start_column: 2 #1 based
+  year: 2025
+  underflow: 3 #no of rows (or other type) before the start and end date - rounded
+  overflow: 3 #no of rows (or other type) after the start and end date - rounded
+  mode: dev 
+  debug: true
+
+  #################
+  # calander columns
+  # columns{
+  #   xcolumn{
+  #   type: iterator/term/week_day/annotation
+  #   iterate: true/false
+  #   (start):x
+  #   (increment):x
+  #   (terms){
+  #     term_name{
+  #       start_date: yyyy-mm-dd
+  #       end_date: yyyy-mm-dd
+  #     }
+  #   }
+  # }
+  
+  columns:
+    # week number
+    week:
+      type: iterator
+      start: 1
+      increment: 1
+    
+    # university Trimesters
+    Uni:
+      type: term
+      iterate: true
+      start: 1
+      terms:
+        trimester 1:
+          start_date: 2025-01-01
+          end_date: 2025-03-30
+        trimester 2:
+          start_date: 2025-04-01
+          end_date: 2025-06-30
+        trimester 3:
+          start_date: 2025-07-01
+          end_date: 2025-09-30
+  
+    # School terms
+    school: 
+      type: term
+      iterate: true
+      start: 1
+      terms:
+        term 1:
+          start_date: 2025-01-01
+          end_date: 2025-03-31
+        term 2:
+          start_date: 2025-04-01
+          end_date: 2025-06-30
+        term 3:
+          start_date: 2025-07-01
+          end_date: 2025-09-30
+        term 4:
+          start_date: 2025-10-01
+          end_date: 2025-12-30
+
+    # legend - required for row labeling
+    legend:
+      type: annotation
+      iterate: false
+
+    # The main calendar columns
+    Monday:
+      type: week_day
+      iterate: false
+    Tuesday:
+      type: week_day
+      iterate: false
+    Wednesday:
+      type: week_day
+      iterate: false
+    Thursday:
+      type: week_day
+      iterate: false
+    Friday:
+      type: week_day
+      iterate: false
+    Saturday:
+      type: week_day
+      iterate: false
+    Sunday:
+      type: week_day
+      iterate: false
+
+    # Empty Notes
+    notes:
+      type: annotation
+      iterate: false
+
+    # Leave days
+    leave:
+      type: annotation
+      iterate: false
+
+
+#################
+# Events  - used for rows
+#################
+# evets{
+#   event_type{
+#     event_name{
+#       date: yyyy-mm-dd or:
+#       (start_date: yyyy-mm-dd
+#       end_date: yyyy-mm-dd)
+#       description: xxxx
+#       fixed_date: true/false
+#     }
+#   }
+
+events:
+
+  # dates are here
+
+  # public holidays
+  public_holidays:
+    new years day: 
+      date: 2025-01-01
+      description: xxxx
+      fixed_date: true
+    good friday: 
+      date: 2025-07-04
+      description: xxxx
+      fixed_date: false
+    easter monday: 
+      date: 2025-07-07
+      description: xxxx
+      fixed_date: false
+    anzac day: 
+      date: 2025-04-25
+      description: xxxx
+      fixed_date: true
+    kings birthday holiday: 
+      date: 2025-06-02
+      description: xxxx
+      fixed_date: true
+    labour day: 
+      date: 2025-10-27
+      description: xxxx
+      fixed_date: true
+    christmas day: 
+      date: 2025-12-25
+      description: xxxx
+      fixed_date: true
+    boxing day: 
+      date: 2025-12-26
+      description: xxxx
+      fixed_date: true
+
+  # School relarted events
+  school:
+    pupil free day: 
+      date: 2025-01-10
+      description: xxxx
+    show_day: 
+      date: 2025-01-10
+      description: xxxx
+    christmas_concert: 
+      date: 2025-12-10
+      description: xxxx
+    interviews:
+      date: 2025-10-01
+      description: xxxx
+    open_night:
+      date: 2025-10-01
+      description: xxxx
+
+  # multi day events or festivals dates usually change each year
+  multi_day_events:
+    ramadan:
+      start_date: 2025-12-20
+      end_date: 2026-01-31
+      description: Ramadan is the ninth month of the Islamic calendar, observed by Muslims worldwide as a month of fasting, prayer, reflection and community. A commemoration of Muhammad's first revelation, the annual observance of Ramadan is regarded as one of the Five Pillars of Islam and lasts twenty-nine to thirty days, from one sighting of the crescent moon to the next.
+      fixed_date: false
+    eurovision:
+      start_date: 2025-04-10
+      end_date: 2025-04-27
+      description: The Eurovision Song Contest by the European Broadcasting Union, the world's foremost alliance of public service media, representing 116 member organizations in 56 countries and an additional 34 Associates in Asia, Africa, Australasia and the Americas.
+      fixed_date: false
+  # International days - and other dates of significance
+  Observances:
+    pi_day:
+      date: 2025-03-14
+      description: Pi Day is an annual celebration of the mathematical constant π (pi). Pi Day is observed on March 14 (3/14 in the month/day format) since 3, 1, and 4 are the first three significant digits of π.
+      fixed_date: true
+    international_pronouns_day:
+      date: 2025-10-15
+      description: International Pronouns Day seeks to make respecting, sharing, and educating about personal pronouns commonplace. Referring to people by the pronouns they determine for themselves is basic to human dignity. Being referred to by the wrong pronouns particularly
+      fixed_date: true
+
+  # Birthdays - happy birthday to you
+  birthdays:
+    john_doe:
+      date: 2025-01-01
+      birthday: 1999-01-01
+      description: John Doe's birthday
+      fixed_date: true
+
+  # family events - holidays, social gatherings, birthday parties, etc
+  family and frieds:
+    mothers day:
+      date: 2025-05-11
+      description: Family get-to-gether
+      fixed_date: false
+    Caribean holiday:
+      start_date: 2025-04-10
+      end_date: 2025-04-27
+      description: Father's Day is a celebration honoring fathers and celebrating fatherhood, paternal bonds, and the influence of fathers in society.
+      fixed_date: false
+
+  # work events - meetings, conferences, leave, etc
+  work:
+    an important team meeting:
+      date: 2025-01-10
+      description: Team meeting
+    IMW conference:
+      start_date: 2025-04-10
+      end_date: 2025-04-27
+      description: Conference
+    study_leave:
+      date: 2025-03-10
+      description: Leave day
+
+  # study events - seminars, exams, due dates, etc
+  study:
+    exam for butchery:
+      date: 2025-01-10
+      description: Exam
+    big seminar:
+      date: 2025-02-10
+      description: Seminar
+    paper due date:
+      date: 2025-03-10
+      description: Microwave cooking assignment Due date
+
+#################
+# Styles - see https://openpyxl.readthedocs.io/en/3.1.3/styles.html
+#styles:
+# style_name:
+#   font:
+#     name: Arial
+#     size: 12
+#     bold: true/false
+#     italic: true/false
+#     strike: true/false
+#     underline: none/single/double 
+#     color: 000000
+#   fill:
+#     fill_type: solid
+#     fgColor: 00FF0000   as ttRRGGBB t=transparency
+#   border:
+#     left:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#      right:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#      top:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#      bottom:
+#       border_style: {'thin', 'medium', 'dashDot', 'mediumDashed', 'thick', 'dashed', 'slantDashDot', 'mediumDashDot', 'dashDotDot', 'dotted', 'hair', 'double', 'mediumDashDotDot'}
+#       color: 00000000
+#   alignment:
+#     horizontal: general/left/center/right/fill/justify/centerContinuous/distributed
+#     vertical: bottom/center/top/justify/distributed
+#     text_rotation: 0
+#     wrap_text: true/false
+#     shrink_to_fit: true/false
+#     indent: 0
+#   number_format: general/0/0.00/0.00%/
+#   protection:
+#     locked: true/false
+#     hidden: true/false
+
+styles:
+  heading:
+    font:
+      name: Arial
+      size: 8
+      bold: true
+      italic: true
+      strike: false
+      underline: none 
+      color: 00FF00FF
+    fill:
+      fill_type: solid
+      fgColor: 00FFCC11
+    border:
+      left:
+        border_style: medium
+        color: 00FF0000
+      right:
+        border_style: thick
+        color: 00FF0000
+      top:
+        border_style: double
+        color: 00FF0000
+      bottom:
+        border_style: dashDotDot
+        color: 00FF0000
+    alignment:
+      horizontal: center
+      vertical: bottom
+      text_rotation: 0
+      wrap_text: true
+      shrink_to_fit: false
+      indent: 0
+    number_format: general
+    protection:
+      locked: true
+      hidden: false
+
+  date:
+    font:
+      name: Arial
+      size: 8
+      bold: true
+      italic: false
+      strike: false
+      underline: none 
+      color: 00000000
+    fill:
+      fill_type: solid
+      fgColor: 00999999
+    border:
+      left:
+        border_style: none
+        color: 00FF0000
+      right:
+        border_style: thick
+        color: 00FF0000
+      top:
+        border_style: double
+        color: 00FF0000
+      bottom:
+        border_style: dashDotDot
+        color: 00FF0000
+    alignment:
+      horizontal: center
+      vertical: bottom
+      text_rotation: 0
+      wrap_text: true
+      shrink_to_fit: false
+      indent: 0
+    number_format: general
+    protection:
+      locked: true
+      hidden: false
+
+
+#################
+# scheduled events  - used for rows - types are joined to fixed events
+#################
+# scheduled events{
+#   event_type{
+#     event_name{..... check for standardised convention
+#       start_date: yyyy-mm-dd
+#       end_date: yyyy-mm-dd)
+#       description: xxxx
+#       schedule_frequency: weekly, monthly
+#       scheduled: first
+#       scheduled_day: Monday/Tuesday/Wednesday/Thursday/Friday/Saturday/Sunday:
+#       scheduled_date: 12 
+#     }
+#   }
