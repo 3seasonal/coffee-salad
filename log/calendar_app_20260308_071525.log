@@ -1,0 +1,5 @@
+2026-03-08 07:15:25,693 - calendar_app_20260308_071525.log - INFO - writing log to /workspaces/coffee-salad/log/calendar_app_20260308_071525.log
+2026-03-08 07:15:25,693 - calendar_app_20260308_071525.log - DEBUG - set file-logging to 10 level
+2026-03-08 07:15:25,693 - calendar_app_20260308_071525.log - INFO - set console-logging to 20 level
+2026-03-08 07:15:25,693 - calendar_app_20260308_071525.log - INFO - initialised utility class
+2026-03-08 07:15:25,693 - calendar_app_20260308_071525.log - INFO - log file created at /workspaces/coffee-salad/log/calendar_app_20260308_071525.log

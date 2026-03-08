@@ -70,7 +70,7 @@ class calendarXlsxCreator:
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
 
         #get general unitlity class:
-        dt = datetime.now().strftime('%Y%m%d_%H%M')
+        dt = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         # Store configuration for use:
         if not config:
@@ -82,27 +82,91 @@ class calendarXlsxCreator:
                    
         # Handle the creation of the calendar XLSX file. If it does not exist,
         self.xlsx_name = config.get("calendar", {}).get("xlsx_name")
-        
-        # check if it ends with .xlsx
         if not self.xlsx_name.endswith(".xlsx"):
             self.xlsx_name = self.xlsx_name + ".xlsx"
-        self.xlsx_name = self.xlsx_name.replace(".xlsx", "{dt}.xlsx") # add time stamp to the file name 
+        self.xlsx_name = self.xlsx_name.replace(".xlsx", f"_{dt}.xlsx") # add time stamp to the file name 
     
         # calculate path to the xlsx file:
         self.xlsx_path = os.path.join(self.script_dir, self.xlsx_name)
         self.log.info(f"XLSX file path set to: {self.xlsx_path}")    
         
+                # initialise configuration handlers:
+        self.events = config['events'] # the events configuration, used for populating the calendar with events
+        self.category_list = list(self.events.keys()) # list of categories in the calendar, used for indexing the columns 
+        self.calender_config = config['calendar']
+
         # create new xlsx file using openpyxl (check if it exists first, if it does, delete it and create a new one)
         if os.path.exists(self.xlsx_path):
             self.log.warning(f"XLSX file already exists at {self.xlsx_path}. It will be overwritten.")
             os.remove(self.xlsx_path)
         self.workbook = openpyxl.Workbook()
         self.log.info(f"New XLSX workbook created at {self.xlsx_path}.")
+        self.worksheet = self.workbook.active
+        self.worksheet.title = (self.calender_config['worksheet_name'])
+        self.cell_date={} # a dictionary to store the cell references for each date
+
+        # get day stats
+        start_date = datetime.strptime(self.calender_config['start_date'], "%Y-%m-%d").date()
+        end_date = datetime.strptime(self.calender_config['end_date'], "%Y-%m-%d").date()
+        underflow_delta = datetime.timedelta(weeks = self.calender_config['underflow_weeks'])
+        overflow_delta = datetime.timedelta(weeks = self.calender_config['overflow_weeks'])
+        self.first_date = start_date - underflow_delta
+        self.last_date = end_date + overflow_delta
+        self.column_config = self.config['columns']
+        dow_cols = self.column_config['days_of_week_columns']
+        self.column_list = self.column_config['column_order']
+        self.first_dow_column = self.column_list.index(dow_cols[0]) # get the column index of the first day of week column 
+
+        # confirm the start date is the iso day of the week defined by the config:
+        if start_date.isoweekday() != self.calender_config['week_stats_on']:
+            self.log.critical(f"Start date {start_date} does not match the expected day of the week defined in the configuration (week_stats_on: {self.calender_config['week_stats_on']}). This may lead to misalignment of dates in the calendar.")
+            raise CalendarXlsxCreatorError(f"Start date {start_date} does not match the expected day of the week defined in the configuration (week_stats_on: {self.calender_config['week_stats_on']}). Please check your configuration and try again.")
+
+        # confirm the start_column and start_row are valid (+ve ints and not zero):
+        if not isinstance(self.calender_config['start_column'], int) or self.calender_config['start_column'] <= 0:
+            self.log.critical(f"Invalid start_column value: {self.calender_config['start_column']}. Please check your configuration and try again.")
+            raise CalendarXlsxCreatorError(f"Invalid start_column value: {self.calender_config['start_column']}. Please check your configuration and try again.")
+        if not isinstance(self.calender_config['start_row'], int) or self.calender_config['start_row'] <= 0:
+            self.log.critical(f"Invalid start_row value: {self.calender_config['start_row']}. Please check your configuration and try again.")
+            raise CalendarXlsxCreatorError(f"Invalid start_row value: {self.calender_config['start_row']}. Please check your configuration and try again.")
+
+        # calculate date cell references and store in the cell_date dictionary:
+        row = self.calender_config['start_row']
+        col = self.calender_config['start_column']
+        for d in range((self.last_date - self.first_date).days + 1):
+            date = self.first_date + datetime.timedelta(days=d)
+            # calculate cell ref as a touple of (row, col)
+            cell_ref = (row, ((col%7) + self.calender_config['start_column'] + + self.first_dow_column))
+            # save in dict
+            self.cell_date[date] = cell_ref
+            #self.log.debug(f"Date {date} mapped to cell {cell_ref}.")
+
+
+
+
+
+
+    def get_cell_by_date(self, date: datetime.date) -> cell:
+        #get value and return
+
+
+    def category_row_offset(self, category: str) -> int:
+        """Calculate the row offset for a given category based on the category list.
         
-        # INITIALISE TRACKERS:
-        self.category_list = [] # list of categories in the calendar, used for indexing the columns 
-        .....
-                
+        Args:
+            category (str): The name of the category for which to calculate the row offset.
+
+        Returns:
+            int: The row offset for the given category, which is the index of the category in the category list plus one (to account for date row).
+        
+        Raises:
+            CalendarXlsxCreatorError: If the category is not found in the category list.
+        """
+        if category not in self.category_list:
+            self.log.error(f"Category '{category}' not found in category list.")
+            raise CalendarXlsxCreatorError(f"Category '{category}' not found in category list.")
+        return self.category_list.index(category) + 1 # add 1 to account for date row
+
         
         
     def save(self):
@@ -123,7 +187,31 @@ class calendarXlsxCreator:
         except Exception as e:
             self.log.error(f"Failed to save workbook: {e}")
             raise CalendarXlsxCreatorError(f"Failed to save workbook: {e}")
+
+
+
+    def mark_date_as_busy(self, date: datetime.date):
+        """Mark a specific date as busy with an event in the calendar by changing its style.
         
+        Args:
+            date (datetime.date): The date to be marked as busy.
+            category (str): The category of the event (used for column indexing).
+            event_name (str): The name of the event to be displayed in the cell.
+        
+        Returns:
+            Bool: True if the date style was updated, False if it was already marked as busy.
+        
+        Raises:
+            CalendarXlsxCreatorError: If there is an error marking the date as busy, such as invalid date or category.
+        
+        """
+        # This function will be implemented later. It will use the trackers to find the correct cell based on the date and category, and then update the cell with the event name and appropriate styling.
+        pass
+
+
+
+
+
 ## algorithm - to be implemetned later:
 
 '''

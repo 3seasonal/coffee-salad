@@ -257,6 +257,7 @@ class ConfigXlsxReader:
                     self.log.debug(f"Found meta-config reference in '{worksheet_name}', row {row[0].row}: '{param}' -> '{value}'")
                     # do nothing
                 elif param_type == "config":
+                    self.log.debug(f"Found config reference in '{worksheet_name}', row {row[0].row}: '{param}' -> '{value}'")
                     ref_sheet_name = value.strip().lower()
                     if ref_sheet_name != "":
                         output_dict[param] = self._parse_worksheet_(ref_sheet_name)
