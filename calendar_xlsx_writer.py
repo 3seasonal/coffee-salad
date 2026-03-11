@@ -7,6 +7,7 @@ import datetime
 from typing import Dict, List, Any, Tuple, Optional, Union
 import os
 import logging
+import psutil
 
 
 """Calendar xlsx writer module
@@ -49,7 +50,8 @@ class calendarXlsxCreator:
     
     def __init__(self, config: dict, logger=None, ts=datetime.datetime.now().strftime('%Y%m%d_%H%M%S')):
         """Initialize the xlsx calenadarcreator with the path to the Excel file.
-        
+        calculated relevant lookup values
+
         Args:
             config (dict): The configuration dictionary containing calendar settings.
             logger (logging.Logger, optional): A logger instance for logging messages. Defaults to None.
@@ -105,49 +107,84 @@ class calendarXlsxCreator:
         self.worksheet.title = (self.calender_config['worksheet_name'])
         self.cell_date={} # a dictionary to store the cell references for each date
 
-        # get day stats
-        start_date = datetime.strptime(self.calender_config['start_date'], "%Y-%m-%d").date()
-        end_date = datetime.strptime(self.calender_config['end_date'], "%Y-%m-%d").date()
+        # get key dates 
+        self.start_date = datetime.strptime(self.calender_config['start_date'], "%Y-%m-%d").date()
+        self.end_date = datetime.strptime(self.calender_config['end_date'], "%Y-%m-%d").date()
         underflow_delta = datetime.timedelta(weeks = self.calender_config['underflow_weeks'])
         overflow_delta = datetime.timedelta(weeks = self.calender_config['overflow_weeks'])
-        self.first_date = start_date - underflow_delta
-        self.last_date = end_date + overflow_delta
+        self.first_date = self.start_date - underflow_delta
+        self.last_date = self.end_date + overflow_delta
+
+        # check if the start date is the correct day of the week as defined in the config (week_stats_on). 
+        # if it is not, change the start date to the previous day until it is the correct day of the week. This is to ensure that the calendar starts on the correct day of the week and that the dates are aligned correctly in the calendar.
+        self.start_isoweekday = self.calender_config['week_stats_on']
+        while self.start_date.isoweekday() != self.start_isoweekday:
+            self.start_date = self.start_date - datetime.timedelta(days=1)
+        
+        # check if the end date is the correct day of the week as defined in the config (week_stats_on -1).where the number is between 1 and 7
+        self.end_isoweekday = ((self.calender_config['week_stats_on'] - 1) % 7 or 7) # this calculation ensures that if week_stats_on is 1 (Monday), the end date should be Sunday (7), and if week_stats_on is 7 (Sunday), the end date should be Saturday (6).
+        while self.end_date.isoweekday() != self.end_isoweekday:
+            self.end_date = self.end_date + datetime.timedelta(days=1)
+
+        # get total weeks
+        self.total_weeks = int( ((self.last_date - self.first_date).days + 1) // 7 )
+        self.log.info(f"Calendar will cover the date range from {self.first_date} to {self.last_date}, which is a total of {self.total_weeks} weeks.")
+
+        # get column configuration:
         self.column_config = self.config['columns']
         dow_cols = self.column_config['days_of_week_columns']
         self.column_list = self.column_config['column_order']
         self.first_dow_column = self.column_list.index(dow_cols[0]) # get the column index of the first day of week column 
+        self.column_list.pop(self.first_dow_column) # remove the day of week columns from the column list, as they will be inserted later in the correct order based on the start_isoweekday
 
-        # confirm the start date is the iso day of the week defined by the config:
-        if start_date.isoweekday() != self.calender_config['week_stats_on']:
-            self.log.critical(f"Start date {start_date} does not match the expected day of the week defined in the configuration (week_stats_on: {self.calender_config['week_stats_on']}). This may lead to misalignment of dates in the calendar.")
-            raise CalendarXlsxCreatorError(f"Start date {start_date} does not match the expected day of the week defined in the configuration (week_stats_on: {self.calender_config['week_stats_on']}). Please check your configuration and try again.")
+        # isoweekday lookup
+        self.isoweekday_name={ 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday", 7: "Sunday" }
+
+        # insert the weekday names into the column_list,
+        iwd = self.start_isoweekday
+        index = 0
+        while index < 7:
+            self.column_list.insert(self.first_dow_column + index, self.isoweekday_name[iwd])
+            iwd += 1 if iwd < 7 else 1
+            index += 1
 
         # confirm the start_column and start_row are valid (+ve ints and not zero):
+        self.calendar_start_coloumn = self.calender_config['start_column']
         if not isinstance(self.calender_config['start_column'], int) or self.calender_config['start_column'] <= 0:
-            self.log.critical(f"Invalid start_column value: {self.calender_config['start_column']}. Please check your configuration and try again.")
-            raise CalendarXlsxCreatorError(f"Invalid start_column value: {self.calender_config['start_column']}. Please check your configuration and try again.")
+            self.log.critical(f"Invalid start_column value: {self.calender_config['start_column']}. DEFAUTING to 1.")
+            self.calendar_start_coloumn = 1
+        self.calendar_start_row = self.calender_config['start_row']
         if not isinstance(self.calender_config['start_row'], int) or self.calender_config['start_row'] <= 0:
-            self.log.critical(f"Invalid start_row value: {self.calender_config['start_row']}. Please check your configuration and try again.")
-            raise CalendarXlsxCreatorError(f"Invalid start_row value: {self.calender_config['start_row']}. Please check your configuration and try again.")
+            self.log.critical(f"Invalid start_row value: {self.calender_config['start_row']}. DEFAUTING to 1.")
+            self.calendar_start_row = 1
+
+        # calculate row offsets, excluding header row
+        self.row_offsets = len(self.category_list)+1 #for the date row.
+        
 
         # calculate date cell references and store in the cell_date dictionary:
-        row = self.calender_config['start_row']
-        col = self.calender_config['start_column']
-        for d in range((self.last_date - self.first_date).days + 1):
-            date = self.first_date + datetime.timedelta(days=d)
-            # calculate cell ref as a touple of (row, col)
-            cell_ref = (row, ((col%7) + self.calender_config['start_column'] + + self.first_dow_column))
-            # save in dict
-            self.cell_date[date] = cell_ref
-            #self.log.debug(f"Date {date} mapped to cell {cell_ref}.")
-
-
-
-
-
-
-    def get_cell_by_date(self, date: datetime.date) -> cell:
-        #get value and return
+        self.cell_date = {} # a dictionary to store the date of a cell references
+        self.date_cell = {} # a dictionary to store the cell reference of a date
+        row = self.calender_config['start_row']+1 # start from the row below the header row
+        col = self.first_dow_column
+        week = 0
+        dayno = 0
+        date = self.first_date
+        while week < self.total_weeks:
+            while dayno < 7:
+                self.cell_date[(row,col)] = date
+                self.date_cell[date] = (row, col)
+                dayno += 1
+                col += 1
+                date += datetime.timedelta(days=1)
+            week += 1
+            dayno = 0
+            row += self.row_offsets
+            col = self.first_dow_column
+        
+        # done
+        self.log.info(f"Initialised calender writer")
+        self.save()
 
 
     def category_row_offset(self, category: str) -> int:
@@ -269,15 +306,6 @@ Add event
 
 '''
 
-def create_worksheet(self, sheet_name: str):
-    
-    pass
-    # create a new worksheet with the given name
-    
-    # initialise the worksheet
-    
-    # set the current worksheet to the new worksheet (self.worksheet = self.workbook[sheet_name])
-    
     
 def is_workbook_open(file_path):
     """
