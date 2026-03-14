@@ -149,8 +149,8 @@ flowchart LR
     J --> K[event list table]:::green
 
     E --> L[border styles<br/>metadata and list]:::orange
-    L --> M[styled cells]:::purple
-    L --> N[bordered cells]:::purple
+    L --> M[style-cells]:::purple
+    L --> N[style-border]:::purple
 
     classDef orange fill:#2d1a00,stroke:#a05a00,stroke-width:1px,color:#fff;
     classDef grey fill:#222,stroke:#444,stroke-width:1px,color:#fff;

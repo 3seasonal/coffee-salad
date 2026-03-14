@@ -76,12 +76,12 @@ def main(script_config_file=script_config_file):
     # pretty print dictionaries:
     import pprint
     pp = pprint.PrettyPrinter(indent=4)
-    log.info("Calendar Configuration:")
-    pp.pprint(calendar)
-    log.info("Columns Configuration:")
-    pp.pprint(columns)
-    log.info("Events Configuration:")
-    pp.pprint(events)
+    # log.info("Calendar Configuration:")
+    # pp.pprint(calendar)
+    # log.info("Columns Configuration:")
+    # pp.pprint(columns)
+    # log.info("Events Configuration:")
+    # pp.pprint(events)
     log.info("Styles Configuration:")
     pp.pprint(styles)
     

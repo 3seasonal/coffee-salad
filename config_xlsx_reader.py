@@ -183,10 +183,14 @@ class ConfigXlsxReader:
 
                 # Handle different prinitive types for the row value
                 if param_type.startswith("style-cell"):
-                    output_dict[param] = self._extract_cell_style_(row[col_names['value'] - 1])
+                    if 'style-cell' not in output_dict: 
+                        output_dict['style-cell'] = {}
+                    output_dict['style-cell'][param] = self._extract_cell_style_(row[col_names['value'] - 1])
 
                 elif param_type.startswith("style-border"):
-                    output_dict[param] = self._extract_border_style_(row[col_names['value'] - 1])
+                    if 'style-border' not in output_dict:
+                        output_dict['style-border'] = {}
+                    output_dict['style-border'][param] = self._extract_border_style_(row[col_names['value'] - 1])
 
                 elif param_type == "string":
                     output_dict[param] = value

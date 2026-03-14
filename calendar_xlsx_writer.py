@@ -3,6 +3,7 @@
 
 import openpyxl
 from openpyxl.utils import get_column_letter, column_index_from_string
+from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font  
 import datetime
 from typing import Dict, List, Any, Tuple, Optional, Union
 import os
@@ -92,10 +93,14 @@ class calendarXlsxCreator:
         self.xlsx_path = os.path.join(self.script_dir, self.xlsx_name)
         self.log.info(f"XLSX file path set to: {self.xlsx_path}")    
         
-                # initialise configuration handlers:
+        # initialise configuration handlers:
         self.events = config['events'] # the events configuration, used for populating the calendar with events
         self.category_list = list(self.events.keys()) # list of categories in the calendar, used for indexing the columns 
         self.calender_config = config['calendar']
+
+        # upack and store the styles from the configuration for later use:
+        self.log.debug("unpack style configuration from config")
+        self.style_config = config['styles']
 
         # create new xlsx file using openpyxl (check if it exists first, if it does, delete it and create a new one)
         if os.path.exists(self.xlsx_path):
@@ -165,6 +170,8 @@ class calendarXlsxCreator:
         # calculate date cell references and store in the cell_date dictionary:
         self.cell_date = {} # a dictionary to store the date of a cell references
         self.date_cell = {} # a dictionary to store the cell reference of a date
+        self.max_row = 1 # stored the maxium row number
+        self.max_col = 1 # stored the maxium column number
         row = self.calender_config['start_row']+1 # start from the row below the header row
         col = self.first_dow_column
         week = 0
@@ -177,14 +184,22 @@ class calendarXlsxCreator:
                 dayno += 1
                 col += 1
                 date += datetime.timedelta(days=1)
+                self.max_row = max(self.max_row, row)
+                self.max_col = max(self.max_col, col)
             week += 1
             dayno = 0
             row += self.row_offsets
             col = self.first_dow_column
         
+        # initialise cells for later use:
+        for x in range(1,self.max_col):
+            for y in range(1, self.max_row):
+                self.worksheet.cell(row=x, column=y)
+
         # done
         self.log.info(f"Initialised calender writer")
         self.save()
+
 
 
     def category_row_offset(self, category: str) -> int:
@@ -205,6 +220,7 @@ class calendarXlsxCreator:
         return self.category_list.index(category) + 1 # add 1 to account for date row
 
         
+
         
     def save(self):
         """Save the workbook to the specified path.
@@ -224,6 +240,7 @@ class calendarXlsxCreator:
         except Exception as e:
             self.log.error(f"Failed to save workbook: {e}")
             raise CalendarXlsxCreatorError(f"Failed to save workbook: {e}")
+
 
 
 
@@ -247,6 +264,90 @@ class calendarXlsxCreator:
 
 
 
+    def _apply_cell_style(self, cell, style_name, border=False):
+        """Apply a style to a cell based on the style configuration. 
+            See https://openpyxl.readthedocs.io/en/3.1/styles.html
+            Note that named styles are not used as they are mutible and later style changes will not affect output.
+
+        Args:
+            None
+
+        Returns:
+
+        """
+        pass
+
+    def _build_calendar_structure(self):
+        """Build the basic structure of the calendar worksheet.
+        
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        # populate the header row
+        self.log.debug("populate header row")
+        for column_no, header in enumerate(self.column_list):
+            colno = column_no + self.calendar_start_coloumn
+            self.worksheet.cell(row=self.calendar_start_row, column=colno).value = header
+            # apply style to the header row ... tbc
+
+        # populate catagory columns:
+        self.log.debug("populate legend column")
+        self.legend_column = self.column_list.index(self.column_config['legend_column']) + self.calendar_start_coloumn
+        colno = self.legend_column
+        rowno = self.calendar_start_row + 1 #skip over the column header row
+        while rowno < self.max_row:
+            rowno +=1 #skip over the date row
+            for cr, catagory in enumerate(self.category_list):
+                self.worksheet.cell(row=rowno+cr, column=colno).value = catagory
+                # apply style to the catagory column ... tbc
+        
+        # populate date cells:
+        self.log.debug("populate dates")
+        self.weekno_column = self.column_list.index(self.column_config['weekno_column'])+ self.calendar_start_coloumn
+        for date in self.date_cell:
+            cell = self.worksheet.cell(row=self.date_cell[date][0], column=self.date_cell[date][1])
+            cell.value = date
+            cell.number_format = 'ddd dd-mmm'
+            # calculate the week no column. if this is the first day of the week, as defined in the config (week_stats_on)
+            if date.isoweekday() == self.self.start_isoweekday:
+                self.worksheet.cell(row=self.date_cell[date][0], column=self.weekno_column).value = date.isocalendar()[1] 
+            # apply style to the date and catagory cells
+
+
+    def process_catagories(self):
+        """Process the catagories from the configuration and populate the legend column with the catagory names.
+        
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        pass
+
+
+    def process_events(self):
+        """Process the events from the configuration and populate the calendar with the event data.
+        
+        Args:
+            None
+
+        """
+        pass
+        
+        
+        # iterate events by catagory type and populate the cells with the event data.
+        
+        # if the event is a multi-day event, populate the cells for each day of the event duration, and apply the appropriate styling to indicate that it is a multi-day event. This may involve merging cells or applying a specific style to the range of cells that the event spans.
+        # if there is already content in the cell, append to the existing
+
+        #style the legend column appropriately
+
+        # colour approparietately based on the event category and the styles defined in the configuration
+
 
 
 ## algorithm - to be implemetned later:
@@ -261,6 +362,8 @@ functions:
 - load config (on initialisation)
 - create worksheet
 - save workbook
+
+
 
 - update cell style
 - add style to workbook
