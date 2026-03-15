@@ -144,7 +144,7 @@ class calendarXlsxCreator:
 
         # isoweekday lookup
         self.isoweekday_name={ 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday", 7: "Sunday" }
-
+        self.weekday_names = [v.lower() for v in self.isoweekday_name.values()]
         # insert the weekday names into the column_list,
         iwd = self.start_isoweekday
         index = 0
@@ -289,21 +289,10 @@ class calendarXlsxCreator:
         # populate the header row
         self.log.debug("populate header row")
         for column_no, header in enumerate(self.column_list):
-            colno = column_no + self.calendar_start_coloumn
-            self.worksheet.cell(row=self.calendar_start_row, column=colno).value = header
+            col = column_no + self.calendar_start_coloumn
+            self.worksheet.cell(row=self.calendar_start_row, column=col).value = header
             # apply style to the header row ... tbc
 
-        # populate catagory columns:
-        self.log.debug("populate legend column")
-        self.legend_column = self.column_list.index(self.column_config['legend_column']) + self.calendar_start_coloumn
-        colno = self.legend_column
-        rowno = self.calendar_start_row + 1 #skip over the column header row
-        while rowno < self.max_row:
-            rowno +=1 #skip over the date row
-            for cr, catagory in enumerate(self.category_list):
-                self.worksheet.cell(row=rowno+cr, column=colno).value = catagory
-                # apply style to the catagory column ... tbc
-        
         # populate date cells:
         self.log.debug("populate dates")
         self.weekno_column = self.column_list.index(self.column_config['weekno_column'])+ self.calendar_start_coloumn
@@ -315,6 +304,57 @@ class calendarXlsxCreator:
             if date.isoweekday() == self.self.start_isoweekday:
                 self.worksheet.cell(row=self.date_cell[date][0], column=self.weekno_column).value = date.isocalendar()[1] 
             # apply style to the date and catagory cells
+
+
+        # configure columns
+
+        # iterate the columns list
+        for i, column_name in enumerate (self.column_list):
+            column_name = column_name.lower()
+            col = i + self.calendar_start_coloumn
+
+
+            #FETCH CONFIG
+            (xxxxxxxxxxxxxxxx)
+
+        
+            # process weekno
+            if column_name.lower() in ('weekno','week'):
+                self.log.debug("populate legend column")
+                self.legend_column = self.column_list.index(self.column_config['legend_column']) + self.calendar_start_coloumn
+                colno = self.legend_column
+                rowno = self.calendar_start_row + 1 #skip over the column header row
+                while rowno < self.max_row:
+                    rowno +=1 #skip over the date row
+                    for cr, catagory in enumerate(self.category_list):
+                        self.worksheet.cell(row=rowno+cr, column=colno).value = catagory
+                        # apply style to the catagory column ... tbc
+
+            # process uni
+            if column_name.lower() in ('uni'):
+        
+            # process school
+            if column_name.lower() in ('school'):
+        
+            # legend
+            if column_name.lower() in ('legend'):
+
+            # weekday
+            if column_name.lower() in self.weekday_names:
+        
+            # notes
+            if column_name.lower() in ('notes'):
+        
+            # leave
+            if column_name.lower() in ('leave'):
+
+
+
+
+        # populate catagory columns:
+        
+        
+
 
 
     def process_catagories(self):
