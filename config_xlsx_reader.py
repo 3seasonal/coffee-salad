@@ -227,7 +227,7 @@ class ConfigXlsxReader:
                         if "_" in subcol:
                             # Split the column name to get the type suffix
                             subcol_type = subcol.split("_")[-1].strip().lower()
-                            subcol = subcol[:-len(subcol_type)]
+                            subcol = subcol[:-(len(subcol_type)+1)]
 
                             if subcol_type == "date":
                                 sub_dict[subcol] = self._parse_date_(subcol_value)

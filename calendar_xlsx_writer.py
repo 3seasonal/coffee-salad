@@ -138,11 +138,14 @@ class calendarXlsxCreator:
         # get column configuration:
         self.column_config = self.config['columns']
         dow_cols = self.column_config['days_of_week_columns']
-        self.column_list = self.column_config['column_order']
+        self.column_list = self.column_config['column_order']['value'] # note is stored as a list value 
         self.first_dow_column = self.column_list.index(dow_cols[0]) # get the column index of the first day of week column 
         self.column_list.pop(self.first_dow_column) # remove the day of week columns from the column list, as they will be inserted later in the correct order based on the start_isoweekday
 
-        # isoweekday lookup
+        # ensure all keys are lowercase:
+        self.column_config = {k.lower(): v for k, v in self.column_config.items()}
+
+        # isoweekday lookup - saves loading the calendar package
         self.isoweekday_name={ 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday", 7: "Sunday" }
         self.weekday_names = [v.lower() for v in self.isoweekday_name.values()]
         # insert the weekday names into the column_list,
@@ -294,7 +297,7 @@ class calendarXlsxCreator:
             # apply style to the header row ... tbc
 
         # populate date cells:
-        self.log.debug("populate dates")
+        self.log.info("populate dates")
         self.weekno_column = self.column_list.index(self.column_config['weekno_column'])+ self.calendar_start_coloumn
         for date in self.date_cell:
             cell = self.worksheet.cell(row=self.date_cell[date][0], column=self.date_cell[date][1])
@@ -307,20 +310,74 @@ class calendarXlsxCreator:
 
 
         # configure columns
-
+        self.info("configure columns")
         # iterate the columns list
         for i, column_name in enumerate (self.column_list):
             column_name = column_name.lower()
             col = i + self.calendar_start_coloumn
-
+            row = self.calendar_start_row -1 # decrement one because we want the header row
+            self.worksheet.cell(row=row, column=col).value = column_name.capitalize()
 
             #FETCH CONFIG
-            (xxxxxxxxxxxxxxxx)
+            if column_name not in self.column_config.keys():
+                raise CalendarXlsxCreatorError(f"column '{column_name}' not found in column configuration.")
+            col_config = self.column_config[column_name]
+            # set column width
+            col_width = int(col_config['width'])
+            self.worksheet.column_dimensions[get_column_letter(col)].width = col_width
+            # get default cell style
+            col_style_name =  col_config['style']
+            
+            # process weekno
+            if column_name in ('weekno','week'):
+                self.log.debug("populate week column")
+                date_col = self.first_dow_column + self.calendar_start_coloumn
+                row = self.calendar_start_row
+                weekdate = self.worksheet.cell(column=date_col, row=row).value
+                # iterate over rows and add the isoweekno as the week number
+                while weekdate and isinstance(weekdate, datetime.date) and weekdate <= self.last_date:
+                    self.worksheet.cell(column=col, row=row).value = weekdate.isocalendar()[1]
+                    row += self.row_offsets
+                    ##### set style on cell
+
+            # process uni
+            if column_name in ('uni'):
+                self.log.debug(f"populate the {column_name} column")
+                ## set defualt style
+
+                # iterate terms
+                for term in list(col_config['terms'].keys()):
+                    # unpack
+                    start_date = term['start_date']
+                    end_date = term['end_date'] 
+                    style = term['style']
+                    value = term['value'] 
+                    # get bounding rows
+                    start_date_col, start_date_row = self.date_cell(start_date)
+                    end_date_col, end_date_row = self.date_cell(end_date)
+                    # set value
+                    row = start_date_row
+                    self.worksheet.cell(column=col, row=row).value = value
+                    # style cells
+                    while row <= end_date_row:
+                        ####
+                        # STYLE cell
+                        row += 1
+                
+
+
+
+
 
         
-            # process weekno
-            if column_name.lower() in ('weekno','week'):
-                self.log.debug("populate legend column")
+            # process school
+            if column_name in ('school'):
+                self.log.debug(f"populate the {column_name} column")
+        
+            # legend
+            if column_name in ('legend'):
+                self.log.debug(f"populate the {column_name} column")
+
                 self.legend_column = self.column_list.index(self.column_config['legend_column']) + self.calendar_start_coloumn
                 colno = self.legend_column
                 rowno = self.calendar_start_row + 1 #skip over the column header row
@@ -330,23 +387,17 @@ class calendarXlsxCreator:
                         self.worksheet.cell(row=rowno+cr, column=colno).value = catagory
                         # apply style to the catagory column ... tbc
 
-            # process uni
-            if column_name.lower() in ('uni'):
-        
-            # process school
-            if column_name.lower() in ('school'):
-        
-            # legend
-            if column_name.lower() in ('legend'):
-
             # weekday
-            if column_name.lower() in self.weekday_names:
+            if column_name in self.weekday_names:
+                self.log.debug(f"populate the {column_name} column")
         
             # notes
-            if column_name.lower() in ('notes'):
+            if column_name in ('notes'):
+                self.log.debug(f"populate the {column_name} column")
         
             # leave
-            if column_name.lower() in ('leave'):
+            if column_name in ('leave'):
+                self.log.debug(f"populate the {column_name} column")
 
 
 
