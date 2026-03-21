@@ -101,6 +101,16 @@ class calendarXlsxCreator:
         # upack and store the styles from the configuration for later use:
         self.log.debug("unpack style configuration from config")
         self.style_config = config['styles']
+        # create a single list of style names
+        self.style_list = []
+        for styletype in ['self.style_config','style-cell']:
+            if styletype in self.style_config.keys():
+                for style_name in self.style_config[styletype].keys():
+                    self.style_list.append(style_name)
+                
+
+
+
 
         # create new xlsx file using openpyxl (check if it exists first, if it does, delete it and create a new one)
         if os.path.exists(self.xlsx_path):
@@ -294,8 +304,10 @@ class calendarXlsxCreator:
         for column_no, header in enumerate(self.column_list):
             col = column_no + self.calendar_start_coloumn
             self.worksheet.cell(row=self.calendar_start_row, column=col).value = header
-            # apply style to the header row ... tbc
-
+            ####
+            # STYLE cell
+            ####
+            
         # populate date cells:
         self.log.info("populate dates")
         self.weekno_column = self.column_list.index(self.column_config['weekno_column'])+ self.calendar_start_coloumn
@@ -303,12 +315,21 @@ class calendarXlsxCreator:
             cell = self.worksheet.cell(row=self.date_cell[date][0], column=self.date_cell[date][1])
             cell.value = date
             cell.number_format = 'ddd dd-mmm'
+            
+            # calculate teh weekno column while we are here
             # calculate the week no column. if this is the first day of the week, as defined in the config (week_stats_on)
             if date.isoweekday() == self.self.start_isoweekday:
                 self.worksheet.cell(row=self.date_cell[date][0], column=self.weekno_column).value = date.isocalendar()[1] 
-            # apply style to the date and catagory cells
+                
+            
+            ####
+            # STYLE cell - The date cell
+            # STYLE cell - The cells below
+            ####
 
 
+
+        ####
         # configure columns
         self.info("configure columns")
         # iterate the columns list
@@ -327,23 +348,11 @@ class calendarXlsxCreator:
             self.worksheet.column_dimensions[get_column_letter(col)].width = col_width
             # get default cell style
             col_style_name =  col_config['style']
-            
-            # process weekno
-            if column_name in ('weekno','week'):
-                self.log.debug("populate week column")
-                date_col = self.first_dow_column + self.calendar_start_coloumn
-                row = self.calendar_start_row
-                weekdate = self.worksheet.cell(column=date_col, row=row).value
-                # iterate over rows and add the isoweekno as the week number
-                while weekdate and isinstance(weekdate, datetime.date) and weekdate <= self.last_date:
-                    self.worksheet.cell(column=col, row=row).value = weekdate.isocalendar()[1]
-                    row += self.row_offsets
-                    ##### set style on cell
 
-            # process uni
-            if column_name in ('uni'):
+
+            # process uni and school
+            if column_name in ('uni', 'school'):
                 self.log.debug(f"populate the {column_name} column")
-                ## set defualt style
 
                 # iterate terms
                 for term in list(col_config['terms'].keys()):
@@ -362,50 +371,178 @@ class calendarXlsxCreator:
                     while row <= end_date_row:
                         ####
                         # STYLE cell
+                        ####
                         row += 1
-                
+                    
+                    # label the last row
+                    row -= 1
+                    if row != start_date_row:
+                        # add a closing tag
+                        self.worksheet.cell(column=col, row=row).value = f'{value} (end)'
 
 
-
-
-
-        
-            # process school
-            if column_name in ('school'):
-                self.log.debug(f"populate the {column_name} column")
-        
             # legend
             if column_name in ('legend'):
                 self.log.debug(f"populate the {column_name} column")
-
+                # set params
                 self.legend_column = self.column_list.index(self.column_config['legend_column']) + self.calendar_start_coloumn
                 colno = self.legend_column
                 rowno = self.calendar_start_row + 1 #skip over the column header row
-                while rowno < self.max_row:
+
+                while rowno < self.max_row: 
                     rowno +=1 #skip over the date row
-                    for cr, catagory in enumerate(self.category_list):
-                        self.worksheet.cell(row=rowno+cr, column=colno).value = catagory
-                        # apply style to the catagory column ... tbc
+                    for crow, catagory in enumerate(self.category_list):
+                        self.worksheet.cell(row=rowno+crow, column=colno).value = catagory
+                        ####
+                        # STYLE cell
+                        ####
 
-            # weekday
-            if column_name in self.weekday_names:
-                self.log.debug(f"populate the {column_name} column")
+
+            # weekdays, notes, weekno (or week), leave
+            if column_name in (self.weekday_names + ['notes', 'leave']):
+                self.log.debug(f"pass over the {column_name} column")
+                # dont populate, these are treated as folows:
+                # weekdays - styled when dates are created
+                # notes - empty, potentialy populated by events
+                # weekno - populated same time as the dates
+                # leave - empty, potentialy populated by events
+
+
+    def _get_style_config(self, style_name):
+        # given a key style_name
+        #return a dictionary configuration
+
+        #if style_name is missing in sytles, raise exectpion
+        if style_name not in self.style_list:
+            raise CalendarXlsxCreatorError(f"Oh no. Could not find the style definition for {style_name}")
         
-            # notes
-            if column_name in ('notes'):
-                self.log.debug(f"populate the {column_name} column")
+        # Set return style dictionary
+        return_style = {
+            'font'              :None,
+            'fill'              :None, 
+            'border'            :None,
+            'alignment'         :None,
+            'number_format'     :None
+        }
+        # handle not knowing what style type it is.
+        for styletype in self.style_config.keys():
+            if style_name in self.style_config[styletype]:
+                s_config = self.style_config[styletype][style_name]
+                # handle the border case:
+                if styletype in ('style-border'):
+
+                   ### Add boders object using 
+                   #  https://openpyxl.readthedocs.io/en/stable/styles.html 
+                    and return
+            
+                elif styletype in ('style-cell'):
+
+                    ### Add all other style objects if they exist and return object using 
+                   #  https://openpyxl.readthedocs.io/en/stable/styles.html 
+                
+                else:
+                     raise CalendarXlsxCreatorError(f"Oh no. unknown style type found {styletype} dor style {style_name}")
+
+
+
+
+
+    def _style_cell(self, col_start, row_start, col_end=None, row_end=None, style=None):
         
-            # leave
-            if column_name in ('leave'):
-                self.log.debug(f"populate the {column_name} column")
 
-
-
-
-        # populate catagory columns:
+        col_end = col_start if col_end is None else col_end
+        row_end = col_start if row_end is None else row_end
+        row = row_start
+        col = col_start
         
-        
+        # handle style config
+        if style is None:
+            style = 'Normal'
+        else:
+            style_config = self._get_style_config(style)
 
+        #iterate over cells in range, apply style for each
+        self.log.debug (f'applying style {style}')
+        while col <= col_end:
+            while row <= row_end:
+                # Grab the cell:
+                cell = self.worksheet.cell(row:row, col:col)
+                # clear the cell formating if no syle is given
+                if (style is None) or (style in ('Normal')):
+                    cell.style = 'Normal'
+                else:
+                    # stlye some cells yo!
+                    # handle homegeneous cell styles
+                    if style_config['font'] is not None:
+                        cell.font = style_config['font']
+                    if style_config['fill'] is not None:
+                        cell.fill = style_config['fill']
+                    if style_config['alignment'] is not None:
+                        cell.alignment = style_config['alignment']
+                    if style_config['number_format'] is not None:
+                        cell.number_format = style_config['number_format']   
+                    
+                    # handle hetrogeneous boarder
+                    if style_config['border'] is not None:
+                        border_style = style_config['border']
+                        # filter out boarders we wont use
+                        if col != col_start:
+                            # nullify the left
+                            border_style = Border(
+                                left=None,
+                                right=border_style.right,
+                                top=border_style.top,
+                                bottom=border_style.bottom,
+                                diagonal=border_style.diagonal,
+                                diagonal_direction=border_style.diagonal_direction,
+                                outline=border_style.outline,
+                                vertical=border_style.vertical,
+                                horizontal=border_style.horizontal,
+                            )
+                        if col != col_end:
+                            # nullify the right
+                            border_style = Border(
+                                left=border_style.left,
+                                right=None,
+                                top=border_style.top,
+                                bottom=border_style.bottom,
+                                diagonal=border_style.diagonal,
+                                diagonal_direction=border_style.diagonal_direction,
+                                outline=border_style.outline,
+                                vertical=border_style.vertical,
+                                horizontal=border_style.horizontal,
+                            )
+                        if row != row_start:
+                            # nullify the top
+                            border_style = Border(
+                                left=border_style.left,
+                                right=border_style.right,
+                                top=None,
+                                bottom=border_style.bottom,
+                                diagonal=border_style.diagonal,
+                                diagonal_direction=border_style.diagonal_direction,
+                                outline=border_style.outline,
+                                vertical=border_style.vertical,
+                                horizontal=border_style.horizontal,
+                            )
+                        if row != row_end:
+                            # nullify the bottom
+                            border_style = Border(
+                                left=border_style.left,
+                                right=border_style.right,
+                                top=border_style.top,
+                                bottom=None,
+                                diagonal=border_style.diagonal,
+                                diagonal_direction=border_style.diagonal_direction,
+                                outline=border_style.outline,
+                                vertical=border_style.vertical,
+                                horizontal=border_style.horizontal,
+                            )
+                        #apply style
+                        cell.border = border_style
+                    
+    
+                
 
 
     def process_catagories(self):
