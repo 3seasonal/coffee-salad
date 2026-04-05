@@ -277,6 +277,17 @@ class calendarXlsxCreator:
 
 
 
+
+    def _apply_cell_boarders(self, col_start, row_start, col_end=None, row_end=None, style_name=None):
+        
+        # handle sling cell case:
+        if col_end is None:
+            col_end = col_start
+        if row_end is None:
+            row_end = row_start
+
+
+
     def _apply_cell_style(self, cell, style_name, border=False):
         """Apply a style to a cell based on the style configuration. 
             See https://openpyxl.readthedocs.io/en/3.1/styles.html
@@ -288,7 +299,50 @@ class calendarXlsxCreator:
         Returns:
 
         """
-        pass
+        style = self._get_style_config(style_name)
+        # if it is a border, send to to the apply cells boarder function.
+        if border is not None:
+            self._apply_cell_boarders(col_start=cell.column, row_start=cell.row, style_name=style_name)
+
+        # update the font if it is specified
+        if style['font'] is not None:
+            new_font = style['font']
+            current_font = cell.font
+            # check the values from openpyxl font
+            font_attributes = ['name', 'size', 'bold', 'italic', 'vertAlign', 'underline', 'strike', 'color']
+            for attr in font_attributes:
+                if getattr(new_font, attr) is not None:
+                    setattr(current_font, attr, getattr(new_font, attr))   
+            cell.font = current_font    
+        
+        # update fill if itis specified
+        if style['fill'] is not None:
+            new_fill = style['fill']
+            current_fill = cell.fill
+            # check the values from openpyxl fill
+            fill_attributes = ['fill_type', 'start_color', 'end_color']
+            for attr in fill_attributes:
+                if getattr(new_fill, attr) is not None:
+                    setattr(current_fill, attr, getattr(new_fill, attr))    
+            cell.fill = current_fill
+
+        if style['alignment'] is not None:
+            new_alignment = style['alignment']
+            current_alignment = cell.alignment
+            # check the values from openpyxl alignment
+            alignment_attributes = ['horizontal', 'vertical', 'wrap_text', 'shrink_to_fit', 'indent']
+            for attr in alignment_attributes:
+                if getattr(new_alignment, attr) is not None:
+                    setattr(current_alignment, attr, getattr(new_alignment, attr))
+            cell.alignment = current_alignment
+
+        if style['number_format'] is not None:
+            # there is only one element in the number format, so we can just apply it directly to the cell.
+            cell.number_format = style['number_format']
+   
+
+
+
 
     def _build_calendar_structure(self):
         """Build the basic structure of the calendar worksheet.
@@ -408,6 +462,8 @@ class calendarXlsxCreator:
                 # leave - empty, potentialy populated by events
 
 
+
+
     def _get_style_config(self, style_name):
         # given a key style_name
         #return a dictionary configuration
@@ -428,21 +484,49 @@ class calendarXlsxCreator:
         for styletype in self.style_config.keys():
             if style_name in self.style_config[styletype]:
                 s_config = self.style_config[styletype][style_name]
+
                 # handle the border case:
                 if styletype in ('style-border'):
+                    return_style['border'] = Border(
+                        left=Side(style=s_config['left']['style'], color=s_config['left']['color']) if 'left' in s_config.keys() else None,
+                        right=Side(style=s_config['right']['style'], color=s_config['right']['color']) if 'right' in s_config.keys() else None,
+                        top=Side(style=s_config['top']['style'], color=s_config['top']['color']) if 'top' in s_config.keys() else None,
+                        bottom=Side(style=s_config['bottom']['style'], color=s_config['bottom']['color']) if 'bottom' in s_config.keys() else None,
+                        diagonal=Side(style=s_config['diagonal']['style'], color=s_config['diagonal']['color']) if 'diagonal' in s_config.keys() else None,
+                        diagonal_direction=s_config['diagonal_direction'] if 'diagonal_direction' in s_config.keys() else None,    
+                    )
 
-                   ### Add boders object using 
-                   #  https://openpyxl.readthedocs.io/en/stable/styles.html 
-                    and return
-            
                 elif styletype in ('style-cell'):
+                    if 'font' in s_config.keys():
+                        return_style['font'] = Font(
+                            name=s_config['font']['name'] if 'name' in s_config['font'].keys() else None,
+                            size=s_config['font']['size'] if 'size' in s_config['font'].keys() else None,
+                            bold=s_config['font']['bold'] if 'bold' in s_config['font'].keys() else None,
+                            italic=s_config['font']['italic'] if 'italic' in s_config['font'].keys() else None,
+                            vertAlign=s_config['font']['vertAlign'] if 'vertAlign' in s_config['font'].keys() else None,
+                            underline=s_config['font']['underline'] if 'underline' in s_config['font'].keys() else None,
+                            strike=s_config['font']['strike'] if 'strike' in s_config['font'].keys() else None,
+                            color=s_config['font']['color'] if 'color' in s_config['font'].keys() else None
+                        )
+                    if 'fill' in s_config.keys():
+                        return_style['fill'] = PatternFill(
+                            fill_type=s_config['fill']['fill_type'] if 'fill_type' in s_config['fill'].keys() else "solid",
+                            start_color=s_config['fill']['start_color'] if 'start_color' in s_config['fill'].keys() else None,
+                            end_color=s_config['fill']['end_color'] if 'end_color' in s_config['fill'].keys() else "#00000000"
+                        )
+                    if 'alignment' in s_config.keys():
+                        return_style['alignment'] = Alignment(
+                            horizontal=s_config['alignment']['horizontal'] if 'horizontal' in s_config['alignment'].keys() else None,
+                            vertical=s_config['alignment']['vertical'] if 'vertical' in s_config['alignment'].keys() else None,
+                            wrap_text=s_config['alignment']['wrap_text'] if 'wrap_text' in s_config['alignment'].keys() else None
+                        )
+                    if 'number_format' in s_config.keys():
+                        return_style['number_format'] = s_config['number_format'] if 'number_format' in s_config.keys() else "General"
 
-                    ### Add all other style objects if they exist and return object using 
-                   #  https://openpyxl.readthedocs.io/en/stable/styles.html 
-                
                 else:
                      raise CalendarXlsxCreatorError(f"Oh no. unknown style type found {styletype} dor style {style_name}")
 
+        return return_style
 
 
 
